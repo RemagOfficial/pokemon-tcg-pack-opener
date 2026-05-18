@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { getCardImageUrl } from '../services/tcgdex.js';
 import './CardModal.css';
 
@@ -9,8 +9,63 @@ const RARITY_COLOR = {
   'Rare Holo': '#e879f9',
 };
 
+const TILT_MAX = 34;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
 export default function CardModal({ card, onClose }) {
   const imageWrapRef = useRef(null);
+  // Track whether gyroscope is actively driving tilt so touch can act as fallback
+  const gyroActiveRef = useRef(false);
+
+  const applyTilt = (rx, ry) => {
+    const el = imageWrapRef.current;
+    if (!el) return;
+    el.style.setProperty('--tilt-x', `${clamp(rx, -TILT_MAX, TILT_MAX)}deg`);
+    el.style.setProperty('--tilt-y', `${clamp(ry, -TILT_MAX, TILT_MAX)}deg`);
+  };
+
+  const resetTilt = () => {
+    const el = imageWrapRef.current;
+    if (!el) return;
+    el.style.setProperty('--tilt-x', '0deg');
+    el.style.setProperty('--tilt-y', '0deg');
+  };
+
+  // ── Gyroscope ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (typeof DeviceOrientationEvent === 'undefined') return;
+
+    const handleOrientation = (e) => {
+      if (e.gamma === null) return; // no real data
+      gyroActiveRef.current = true;
+      // gamma: left/right tilt (-90°..90°) → rotateY
+      // beta: forward/back tilt; phone held upright ≈ 90° → centre there
+      const ry = clamp((e.gamma ?? 0) * 0.8, -TILT_MAX, TILT_MAX);
+      const rx = clamp(-((e.beta ?? 90) - 90) * 0.5, -TILT_MAX, TILT_MAX);
+      applyTilt(rx, ry);
+    };
+
+    const register = () =>
+      window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS 13+: permission must be requested from a user gesture.
+      // Piggyback on the next touchstart (the user is already interacting with the modal).
+      const onGesture = () => {
+        DeviceOrientationEvent.requestPermission()
+          .then((state) => { if (state === 'granted') register(); })
+          .catch(() => {});
+      };
+      document.addEventListener('touchstart', onGesture, { once: true });
+      return () => {
+        document.removeEventListener('touchstart', onGesture);
+        window.removeEventListener('deviceorientation', handleOrientation);
+      };
+    } else {
+      register();
+      return () => window.removeEventListener('deviceorientation', handleOrientation);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!card) return null;
 
@@ -18,36 +73,31 @@ export default function CardModal({ card, onClose }) {
   const isHolo = card.rarity === 'Rare Holo';
   const rarityColor = RARITY_COLOR[card.rarity] ?? '#9ca3af';
 
-  const handleBackdropMouseMove = (event) => {
-    const element = imageWrapRef.current;
-    if (!element) return;
-
-    const viewportWidth = window.innerWidth || 1;
-    const viewportHeight = window.innerHeight || 1;
-    const x = event.clientX / viewportWidth;
-    const y = event.clientY / viewportHeight;
-
-    const rotateX = Math.max(-34, Math.min(34, (0.5 - y) * 34));
-    const rotateY = Math.max(-34, Math.min(34, (x - 0.5) * 34));
-
-    element.style.setProperty('--tilt-x', `${rotateX}deg`);
-    element.style.setProperty('--tilt-y', `${rotateY}deg`);
+  // ── Mouse tilt (desktop) ─────────────────────────────────────────────────
+  const handleMouseMove = (e) => {
+    const x = e.clientX / (window.innerWidth  || 1);
+    const y = e.clientY / (window.innerHeight || 1);
+    applyTilt((0.5 - y) * TILT_MAX, (x - 0.5) * TILT_MAX);
   };
 
-  const resetTilt = () => {
-    const element = imageWrapRef.current;
-    if (!element) return;
-
-    element.style.setProperty('--tilt-x', '0deg');
-    element.style.setProperty('--tilt-y', '0deg');
+  // ── Touch tilt (mobile fallback when gyroscope unavailable) ─────────────
+  const handleTouchMove = (e) => {
+    if (gyroActiveRef.current) return; // gyro is driving — don't override
+    const t = e.touches[0];
+    if (!t) return;
+    const x = t.clientX / (window.innerWidth  || 1);
+    const y = t.clientY / (window.innerHeight || 1);
+    applyTilt((0.5 - y) * TILT_MAX, (x - 0.5) * TILT_MAX);
   };
 
   return (
     <div
       className="card-modal-backdrop"
       onClick={onClose}
-      onMouseMove={handleBackdropMouseMove}
+      onMouseMove={handleMouseMove}
       onMouseLeave={resetTilt}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={resetTilt}
       role="dialog"
       aria-modal="true"
       aria-label={card.name}
@@ -84,3 +134,4 @@ export default function CardModal({ card, onClose }) {
     </div>
   );
 }
+

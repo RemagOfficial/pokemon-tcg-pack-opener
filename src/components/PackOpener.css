@@ -517,6 +517,25 @@
   gap: 14px 12px;
 }
 
+/* On narrow screens switch to 3-column grid (3×3 + 1 centred) */
+@media (max-width: 600px) {
+  .summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+    width: calc(100vw - 32px);
+    max-width: 360px;
+    gap: 10px 8px;
+  }
+
+  .summary-grid .pcard {
+    width: 100%;
+  }
+
+  /* Centre the lone card in the last row */
+  .summary-card:last-child:nth-child(3n + 1) {
+    grid-column: 2;
+  }
+}
+
 .summary-card {
   opacity: 0;
   animation: summaryCardIn 0.4s ease forwards;

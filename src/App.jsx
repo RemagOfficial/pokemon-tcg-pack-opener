@@ -6,6 +6,7 @@ import SetSelector from './components/SetSelector.jsx';
 import { useCollection } from './hooks/useCollection.js';
 import { loadSetCards, loadAllSetSymbols } from './services/tcgdex.js';
 import { SETS } from './services/sets.js';
+import Settings from './components/Settings.jsx';
 import './App.css';
 
 // Persist + restore the last-selected set id
@@ -124,6 +125,8 @@ export default function App() {
   }, [collection, loadedSets]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  const [showSettings, setShowSettings] = useState(false);
+
   const showSetSelector = !selectedSetId || (!currentSetCards && !setLoading && !setError);
 
   return (
@@ -133,7 +136,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-header__brand">
           <span className="app-header__logo">&#9670;</span>
-          <h1>Pokémon TCG <span>Pack Opener</span></h1>
+          <h1>Booster<span>Dex</span></h1>
         </div>
         <nav className="app-header__nav">
           <button
@@ -156,6 +159,13 @@ export default function App() {
             onClick={() => setView('achievements')}
           >
             Achievements
+          </button>
+          <button
+            className="nav-btn nav-btn--icon"
+            onClick={() => setShowSettings(true)}
+            aria-label="Settings"
+          >
+            ⚙
           </button>
         </nav>
       </header>
@@ -233,6 +243,7 @@ export default function App() {
         )}
       </main>
     </div>
+    {showSettings && <Settings onClose={() => setShowSettings(false)} />}
     {toast && <div className="app-toast">{toast}</div>}
     {setComplete && (
       <div className="set-complete-overlay" onClick={() => setSetComplete(false)}>

@@ -90,6 +90,41 @@
   line-height: 1.4;
 }
 
+.nav-btn--icon {
+  padding: 7px 12px;
+  font-size: 1rem;
+}
+
+/* ── Mobile header ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .app-header__logo {
+    display: none;
+  }
+
+  .app-header h1 {
+    font-size: 0.95rem;
+  }
+
+  .app-header__nav {
+    gap: 4px;
+  }
+
+  .nav-btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    letter-spacing: 0;
+  }
+
+  .nav-btn--icon {
+    padding: 6px 9px;
+  }
+}
+
 /* ── Main ────────────────────────────────────────────────────── */
 .app-main {
   flex: 1;
