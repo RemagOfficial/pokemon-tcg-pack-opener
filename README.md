@@ -1,16 +1,38 @@
-# React + Vite
+# Pokémon TCG Pack Opener
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Open virtual Pokémon booster packs, reveal cards one-by-one, and build your collection across multiple sets.
 
-Currently, two official plugins are available:
+## 🌐 Play the live site
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**[Open Pokémon TCG Pack Opener on GitHub Pages](https://remagofficial.github.io/pokemon-tcg-pack-opener/)**
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Open animated booster packs
+- Reveal cards with rarity effects (including holo reveals)
+- Track your collection by set
+- View full set checklists and completion progress
+- Unlock and track achievements
 
-## Expanding the ESLint configuration
+## Tech stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React
+- Vite
+- TCGdex API (`@tcgdex/sdk`)
+
+## Run locally
+
+```bash
+npm ci
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Deploy
+
+The app is automatically deployed to GitHub Pages from the `main` branch using GitHub Actions.
