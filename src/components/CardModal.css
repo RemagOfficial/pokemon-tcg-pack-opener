@@ -139,3 +139,18 @@
   color: #475569;
   letter-spacing: 0.05em;
 }
+
+/* ── Mobile ────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .card-modal-content {
+    gap: 12px;
+  }
+
+  .card-modal-image {
+    height: min(52vh, 320px);
+  }
+
+  .card-modal-name {
+    font-size: 1.1rem;
+  }
+}

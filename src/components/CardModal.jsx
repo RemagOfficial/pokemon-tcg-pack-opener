@@ -33,8 +33,7 @@ export default function CardModal({ card, onClose }) {
 
   // ── Gyroscope ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (typeof DeviceOrientationEvent === 'undefined') return;
-
+    if (typeof DeviceOrientationEvent === 'undefined') return;    if (localStorage.getItem('pkmon_gyro_disabled') === 'true') return;
     const handleOrientation = (e) => {
       if (e.gamma === null) return; // no real data
       gyroActiveRef.current = true;

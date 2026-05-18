@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import './Settings.css';
 
 const CHANGELOG = [
@@ -21,6 +22,19 @@ const CHANGELOG = [
 ];
 
 export default function Settings({ onClose }) {
+  const [gyroDisabled, setGyroDisabled] = useState(
+    () => localStorage.getItem('pkmon_gyro_disabled') === 'true'
+  );
+
+  const toggleGyro = () => {
+    const next = !gyroDisabled;
+    setGyroDisabled(next);
+    if (next) {
+      localStorage.setItem('pkmon_gyro_disabled', 'true');
+    } else {
+      localStorage.removeItem('pkmon_gyro_disabled');
+    }
+  };
   return (
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -30,6 +44,17 @@ export default function Settings({ onClose }) {
         </div>
 
         <div className="settings-body">
+          <section className="settings-section">
+            <h3 className="settings-section__title">Preferences</h3>
+            <div className="settings-toggle-row">
+              <span className="settings-toggle-label">Gyroscope card tilt (when available)</span>
+              <label className="settings-toggle">
+                <input type="checkbox" checked={!gyroDisabled} onChange={toggleGyro} />
+                <span className="settings-toggle-track" />
+              </label>
+            </div>
+          </section>
+
           <section className="settings-section">
             <h3 className="settings-section__title">Changelog</h3>
             <div className="changelog">
