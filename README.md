@@ -1,10 +1,10 @@
-# Pokémon TCG Pack Opener
+# BoosterDex
 
 Open virtual Pokémon booster packs, reveal cards one-by-one, and build your collection across multiple sets.
 
 ## 🌐 Play the live site
 
-**[Open Pokémon TCG Pack Opener on GitHub Pages](https://remagofficial.github.io/pokemon-tcg-pack-opener/)**
+**[Open BoosterDex on GitHub Pages](https://remagofficial.github.io/BoosterDex/)**
 
 ## Features
 
