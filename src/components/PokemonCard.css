@@ -1,0 +1,143 @@
+.pcard {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  background: #1a1a2e;
+  transition: transform 0.2s, box-shadow 0.2s;
+  aspect-ratio: 2.5 / 3.5;
+  display: flex;
+  align-items: center;
+
+.pcard--clickable { cursor: pointer; }
+.pcard--clickable:hover { transform: translateY(-4px) scale(1.03); box-shadow: 0 10px 28px rgba(0,0,0,0.7); }
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pcard:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7);
+}
+
+/* Sizes */
+.pcard.size-normal {
+  width: 160px;
+}
+.pcard.size-small {
+  width: 110px;
+}
+.pcard.size-large {
+  width: 220px;
+}
+
+.pcard__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
+/* Rarity badge */
+.pcard__rarity {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 6px rgba(0,0,0,0.9);
+  pointer-events: none;
+}
+
+/* Duplicate count badge */
+.pcard__count {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fbbf24;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* ── Holo shimmer overlay ─────────────────────────────────── */
+.pcard--holo {
+  box-shadow: 0 4px 18px rgba(192, 132, 252, 0.7),
+              0 0 0 1px rgba(192, 132, 252, 0.45),
+              0 0 12px rgba(80, 200, 255, 0.3);
+}
+.pcard--holo:hover {
+  box-shadow: 0 10px 36px rgba(192, 132, 252, 0.9),
+              0 0 0 1px rgba(192, 132, 252, 0.6),
+              0 0 20px rgba(80, 200, 255, 0.45);
+}
+
+.pcard__holo-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 15%,
+    rgba(255, 80,  80,  0.26) 25%,
+    rgba(255, 210, 50,  0.26) 31%,
+    rgba(80,  255, 120, 0.26) 37%,
+    rgba(80,  200, 255, 0.26) 43%,
+    rgba(160, 100, 255, 0.26) 49%,
+    transparent 60%
+  );
+  background-size: 250% 250%;
+  mix-blend-mode: color-dodge;
+  animation: holoShimmer 4s ease-in-out infinite;
+}
+
+@keyframes holoShimmer {
+  0%, 100% { background-position: 0%   50%; opacity: 0.8; }
+  50%       { background-position: 100% 50%; opacity: 1; }
+}
+
+/* ── Unowned (checklist view) ─────────────────────────────────────────── */
+.pcard--unowned .pcard__img {
+  filter: grayscale(1) brightness(0.35);
+}
+
+.pcard--unowned.pcard--holo {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Secret Rare (owned) ──────────────────────────────────────────────── */
+.pcard--secret-rare {
+  box-shadow:
+    0 0 0 2px rgba(251, 191, 36, 0.9),
+    0 4px 24px rgba(251, 191, 36, 0.6),
+    0 0 36px rgba(251, 191, 36, 0.3);
+  animation: secretPulse 3s ease-in-out infinite;
+}
+@keyframes secretPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(251,191,36,0.9), 0 4px 24px rgba(251,191,36,0.6), 0 0 36px rgba(251,191,36,0.3); }
+  50%       { box-shadow: 0 0 0 2px rgba(251,191,36,1),   0 4px 32px rgba(251,191,36,0.9), 0 0 52px rgba(251,191,36,0.5); }
+}
+
+/* ── Secret Rare unowned (mystery card) ──────────────────────────────── */
+.pcard--secret-unowned {
+  background: #000;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pcard__mystery-q {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #1e293b;
+  user-select: none;
+  line-height: 1;
+}
