@@ -187,8 +187,23 @@
   font-size: 0.95rem;
   font-weight: 700;
   color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .ach-item--complete .ach-item__title { color: #fbbf24; }
+
+.ach-item__reward {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 20px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 .ach-item__desc {
   font-size: 0.75rem;

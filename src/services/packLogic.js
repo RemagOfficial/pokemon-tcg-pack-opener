@@ -14,8 +14,8 @@ function pickRandom(pool, count) {
 }
 
 export function openPack(allCards) {
-  const holoRares    = allCards.filter((c) => c.rarity === 'Rare Holo');
-  const rares        = allCards.filter((c) => c.rarity === 'Rare');
+  const holoRares    = allCards.filter((c) => c.holo === true);
+  const rares        = allCards.filter((c) => c.rarity === 'Rare' && !c.holo);
   const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon');
   const commons      = allCards.filter((c) => c.rarity === 'Common');
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare');

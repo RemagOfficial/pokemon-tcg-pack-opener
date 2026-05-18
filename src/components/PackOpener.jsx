@@ -34,13 +34,21 @@ function PackGraphic({ state, setName }) {
 // phases: idle → opening → revealing → summary
 //
 // cardState (during revealing): facedown → flipping → faceup → hiding
-export default function PackOpener({ cards, setName, onCardsAdded, collection, onChangeSet }) {
+export default function PackOpener({
+  cards, setName, onCardsAdded, collection, onChangeSet,
+  // Economy mode props
+  economyMode = false, coins = 0, packPrice = 100,
+  onBuyPack, onSellCard, getCardSellPrice,
+  canCoinFlip = false, onCoinFlip,
+  freePacks = 0, onUseFreePack,
+}) {
   const [phase,        setPhase]        = useState('idle');
   const [packCards,    setPackCards]    = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   // cardState drives the flip + dismiss animation for the active card
   const [cardState,    setCardState]    = useState('facedown');
   const [modalCard,    setModalCard]    = useState(null);
+  const [soldIndices,  setSoldIndices]  = useState(() => new Set());
 
   // Keep a ref so timers can read up-to-date packCards.length without stale closure
   const packCardsRef = useRef([]);
@@ -107,7 +115,12 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, o
   }, [cardState]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
-  const handleOpenPack = useCallback(() => {
+  const handleOpenPack = useCallback((free = false) => {
+    if (economyMode) {
+      if (free) onUseFreePack?.();
+      else onBuyPack?.();
+    }
+    setSoldIndices(new Set());
     clearTimers();
     preOpenCollectionRef.current = new Set(collectionRef.current.map((c) => c.id));
     const drawn = openPack(cards);
@@ -117,7 +130,7 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, o
     setCardState('facedown');
     setPhase('opening');
     openingTimerRef.current = setTimeout(() => setPhase('revealing'), 700);
-  }, [cards, clearTimers]);
+  }, [cards, clearTimers, economyMode, onBuyPack, onUseFreePack]);
 
   const handleSkipToSummary = useCallback(() => {
     clearTimers();
@@ -126,7 +139,7 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, o
   }, [clearTimers]);
 
   const currentCard    = packCards[currentIndex];
-  const isHolo         = currentCard?.rarity === 'Rare Holo' || currentCard?.rarity === 'Secret Rare';
+  const isHolo         = currentCard?.holo === true || currentCard?.rarity === 'Secret Rare';
   const isNewCard      = currentCard != null && !preOpenCollectionRef.current.has(currentCard.id);
 
   const handleCardClick = useCallback(() => {
@@ -161,6 +174,7 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, o
     setCurrentIndex(0);
     setCardState('facedown');
     setModalCard(null);
+    setSoldIndices(new Set());
   }, [clearTimers]);
 
   const remaining      = packCards.length - currentIndex;
@@ -175,9 +189,43 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, o
         <div className="pack-opener__idle">
           <h2 className="pack-opener__subtitle">{setName} Booster Pack</h2>
           <PackGraphic state="idle" setName={setName} />
-          <button className="btn-open" onClick={handleOpenPack}>
-            Open Pack
-          </button>
+
+          {economyMode ? (
+            <>
+              <button
+                className={`btn-open${freePacks > 0 ? ' btn-open--free' : ''}`}
+                onClick={() => handleOpenPack(freePacks > 0)}
+                disabled={freePacks === 0 && coins < packPrice}
+              >
+                {freePacks > 0 ? (
+                  <>
+                    🎁 Open Free Pack
+                    <span className="btn-open__badge">{freePacks} left</span>
+                  </>
+                ) : (
+                  <>
+                    Open Pack
+                    <span className="btn-open__price">🪙 {packPrice.toLocaleString()}</span>
+                  </>
+                )}
+              </button>
+              {freePacks === 0 && coins < packPrice && (
+                <p className="pack-cant-afford">
+                  Need {(packPrice - coins).toLocaleString()} more coins
+                </p>
+              )}
+              {canCoinFlip && (
+                <button className="btn-coin-flip-idle" onClick={onCoinFlip}>
+                  🪙 Flip a Coin for a Free Pack
+                </button>
+              )}
+            </>
+          ) : (
+            <button className="btn-open" onClick={handleOpenPack}>
+              Open Pack
+            </button>
+          )}
+
           {onChangeSet && (
             <button className="btn-change-set" onClick={onChangeSet}>
               Change Set
@@ -280,24 +328,70 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, o
           <h2 className="summary-title">Pack Results</h2>
 
           <div className="summary-grid">
-            {packCards.map((card, i) => (
-              <div
-                key={card.id + i}
-                className="summary-card"
-                style={{ animationDelay: `${i * 55}ms` }}
-                onClick={() => setModalCard(card)}
-              >
-                <div className="summary-card__inner">
-                  <PokemonCard card={card} size="normal" />
-                  {!preOpenCollectionRef.current.has(card.id) && (
-                    <div className="new-badge new-badge--summary">NEW</div>
-                  )}
+            {packCards.map((card, i) => {
+              const isDupe   = preOpenCollectionRef.current.has(card.id);
+              const isSold   = soldIndices.has(i);
+              const sellAmt  = getCardSellPrice?.(card) ?? 0;
+              return (
+                <div
+                  key={card.id + i}
+                  className={`summary-card${isSold ? ' summary-card--sold' : ''}`}
+                  style={{ animationDelay: `${i * 55}ms` }}
+                  onClick={() => !isSold && setModalCard(card)}
+                >
+                  <div className="summary-card__inner">
+                    <PokemonCard card={card} size="normal" />
+                    {!isDupe && !isSold && (
+                      <div className="new-badge new-badge--summary">NEW</div>
+                    )}
+                    {isSold && (
+                      <div className="sold-badge">SOLD</div>
+                    )}
+                    {economyMode && isDupe && !isSold && (
+                      <button
+                        className="btn-sell-card"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSoldIndices((prev) => new Set([...prev, i]));
+                          onSellCard?.(card);
+                        }}
+                      >
+                        🪙 {sellAmt.toLocaleString()}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="summary-actions">
+            {economyMode && (() => {
+              const unsold = packCards
+                .map((card, i) => ({ card, i }))
+                .filter(({ card, i }) => preOpenCollectionRef.current.has(card.id) && !soldIndices.has(i));
+              const earned = [...soldIndices]
+                .reduce((sum, idx) => sum + (getCardSellPrice?.(packCards[idx]) ?? 0), 0);
+              return (
+                <>
+                  {earned > 0 && (
+                    <p className="summary-earned">🪙 +{earned.toLocaleString()} coins from sales</p>
+                  )}
+                  {unsold.length >= 2 && (
+                    <button
+                      className="btn-sell-all"
+                      onClick={() => {
+                        const next = new Set(soldIndices);
+                        for (const { card, i } of unsold) { next.add(i); onSellCard?.(card); }
+                        setSoldIndices(next);
+                      }}
+                    >
+                      Sell All Duplicates ({unsold.length})
+                    </button>
+                  )}
+                </>
+              );
+            })()}
             <span className="summary-added">✓ Added to collection</span>
             <button className="btn-open" onClick={handleReset}>
               Open Another Pack

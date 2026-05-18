@@ -3,6 +3,20 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.2.0',
+    date: '2026-05-18',
+    entries: [
+      'Economy Mode (beta) — buy packs with coins, earn coins by opening packs and selling duplicates',
+      'Coin flip mini-game when broke — win to earn a free pack',
+      'Free packs awarded for completing achievements — harder achievements give more packs',
+      'Free packs are set-specific, awarded only for sets you already own cards from',
+      'Holo is now a separate property from rarity — cards can be Rare + Holo simultaneously',
+      'Collection filter tabs updated: Holo filter shows all holo cards regardless of rarity',
+      'Card rarity badges now show rarity symbol and holo ✦ in distinct colours',
+      'Fullscreen card view shows holo status alongside rarity',
+    ],
+  },
+  {
     version: '1.1.0',
     date: '2026-05-18',
     entries: [
@@ -21,7 +35,7 @@ const CHANGELOG = [
   },
 ];
 
-export default function Settings({ onClose }) {
+export default function Settings({ onClose, mode = 'sandbox', onModeChange }) {
   const [gyroDisabled, setGyroDisabled] = useState(
     () => localStorage.getItem('pkmon_gyro_disabled') === 'true'
   );
@@ -50,6 +64,27 @@ export default function Settings({ onClose }) {
               <span className="settings-toggle-label">Gyroscope card tilt (when available)</span>
               <label className="settings-toggle">
                 <input type="checkbox" checked={!gyroDisabled} onChange={toggleGyro} />
+                <span className="settings-toggle-track" />
+              </label>
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <h3 className="settings-section__title">
+              Experimental
+              <span className="settings-badge settings-badge--exp">Beta</span>
+            </h3>
+            <div className="settings-toggle-row">
+              <div>
+                <span className="settings-toggle-label">Economy Mode</span>
+                <p className="settings-toggle-desc">Buy packs with coins, sell duplicates, and flip a coin when you&apos;re broke.</p>
+              </div>
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  checked={mode === 'economy'}
+                  onChange={() => onModeChange?.(mode === 'economy' ? 'sandbox' : 'economy')}
+                />
                 <span className="settings-toggle-track" />
               </label>
             </div>

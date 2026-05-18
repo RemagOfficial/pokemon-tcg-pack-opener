@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ACHIEVEMENT_SETS, computeProgress } from '../services/achievements.js';
+import { ACHIEVEMENT_SETS, computeProgress, getAchievementReward } from '../services/achievements.js';
 import './Achievements.css';
 
 const RARITY_CLASS = {
@@ -10,7 +10,7 @@ const RARITY_CLASS = {
   null:       'rarity--master',
 };
 
-export default function Achievements({ collection, allCards }) {
+export default function Achievements({ collection, allCards, economyMode = false }) {
   const [activeSet, setActiveSet] = useState(null);
 
   const progress = useMemo(
@@ -81,7 +81,14 @@ export default function Achievements({ collection, allCards }) {
                 {prog.complete ? '✓' : ach.icon}
               </div>
               <div className="ach-item__body">
-                <div className="ach-item__title">{ach.title}</div>
+                <div className="ach-item__title">
+                  {ach.title}
+                  {economyMode && (
+                    <span className="ach-item__reward">
+                      🎁 {getAchievementReward(ach)}
+                    </span>
+                  )}
+                </div>
                 <div className="ach-item__desc">{ach.description}</div>
                 <div className="ach-item__progress-row">
                   <div className="ach-item__bar">

@@ -292,6 +292,9 @@ export function inferRarity(setConfig, localId) {
         if (String(localId).startsWith(prefix)) return rarity;
       }
     }
+    // H-prefix cards with no explicit mapping are holo variants of regular cards
+    // (same art, but with holographic treatment — tracked separately)
+    if (/^H/i.test(String(localId))) return 'Holo Variant';
     return 'Common';
   }
 

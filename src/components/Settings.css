@@ -83,6 +83,35 @@
   text-transform: uppercase;
   color: #475569;
   margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Badge (e.g. "Beta") */
+.settings-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.settings-badge--exp {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+/* Description text below a toggle label */
+.settings-toggle-desc {
+  font-size: 0.75rem;
+  color: #475569;
+  margin: 3px 0 0;
+  line-height: 1.4;
 }
 
 /* ── Changelog ──────────────────────────────────────────────── */

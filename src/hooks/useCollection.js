@@ -34,5 +34,16 @@ export function useCollection() {
     });
   }, []);
 
-  return { collection, addCards };
+  // Sell one copy of a card (decrements count; removes entry if count reaches 0)
+  const sellCard = useCallback((cardId) => {
+    setCollection((prev) => {
+      const updated = prev
+        .map((c) => (c.id === cardId ? { ...c, count: (c.count ?? 1) - 1 } : c))
+        .filter((c) => (c.count ?? 0) > 0);
+      persist(updated);
+      return updated;
+    });
+  }, []);
+
+  return { collection, addCards, sellCard };
 }

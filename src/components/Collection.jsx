@@ -4,13 +4,22 @@ import CardModal from './CardModal.jsx';
 import { SETS } from '../services/sets.js';
 import './Collection.css';
 
-const RARITIES = ['All', 'Rare Holo', 'Rare', 'Uncommon', 'Common'];
-const RARITY_ORDER = { 'Rare Holo': 0, 'Rare': 1, 'Uncommon': 2, 'Common': 3 };
+const RARITIES = ['All', 'Holo', 'Rare', 'Uncommon', 'Common'];
+// Sort score: holo rares first, then non-holo rares, uncommons, commons
+const sortScore = (card) => {
+  if (card.holo  && card.rarity === 'Rare')     return 0;
+  if (!card.holo && card.rarity === 'Rare')     return 1;
+  if (card.holo)                                return 2; // holo non-rare (edge case)
+  if (card.rarity === 'Uncommon')               return 3;
+  if (card.rarity === 'Common')                 return 4;
+  return 5;
+};
 
-export default function Collection({ collection, loadedSets = {}, setSymbols = {}, onLoadSet }) {
+export default function Collection({ collection, loadedSets = {}, setSymbols = {}, onLoadSet, economyMode = false, onSellCard, getCardSellPrice }) {
   const [activeSetId, setActiveSetId] = useState(null);
   const [hideComplete, setHideComplete] = useState(false);
   const [filter, setFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('rarity'); // 'rarity' | 'count'
   const [viewMode, setViewMode] = useState('collection');
   const [modalCard, setModalCard] = useState(null);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(false);
@@ -25,13 +34,17 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
 
   // Filtered + sorted cards for My Cards view
   const displayed = useMemo(() => {
-    const base = filter === 'All' ? setCards : setCards.filter((c) => c.rarity === filter);
-    return [...base].sort(
-      (a, b) =>
-        (RARITY_ORDER[a.rarity] ?? 99) - (RARITY_ORDER[b.rarity] ?? 99) ||
-        a.name.localeCompare(b.name),
-    );
-  }, [setCards, filter]);
+    let base;
+    if (filter === 'All')  base = setCards;
+    else if (filter === 'Holo') base = setCards.filter((c) => c.holo === true);
+    else base = setCards.filter((c) => c.rarity === filter);
+    return [...base].sort((a, b) => {
+      if (sortBy === 'count') {
+        return (b.count ?? 1) - (a.count ?? 1) || sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
+      }
+      return sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
+    });
+  }, [setCards, filter, sortBy]);
 
   // Full checklist cards for active set
   const checklistCards = useMemo(() => {
@@ -174,24 +187,59 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
           </div>
         </div>
 
-        {/* Rarity filter tabs – My Cards mode only */}
+        {/* Rarity filter tabs + sort toggle – My Cards mode only */}
         {viewMode === 'collection' && (
-          <div className="collection__filters" role="group" aria-label="Filter by rarity">
-            {RARITIES.map((r) => (
-              <button
-                key={r}
-                className={`filter-tab${filter === r ? ' filter-tab--active' : ''} filter-tab--${r.replace(/\s+/g, '-').toLowerCase()}`}
-                onClick={() => setFilter(r)}
-              >
-                {r}
-                {r !== 'All' && (
-                  <span className="filter-tab__count">
-                    {setCards.filter((c) => c.rarity === r).length}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="collection__filters-row">
+              <div className="collection__filters" role="group" aria-label="Filter by rarity">
+                {RARITIES.map((r) => (
+                  <button
+                    key={r}
+                    className={`filter-tab${filter === r ? ' filter-tab--active' : ''} filter-tab--${r.replace(/\s+/g, '-').toLowerCase()}`}
+                    onClick={() => setFilter(r)}
+                  >
+                    {r}
+                    {r !== 'All' && (
+                      <span className="filter-tab__count">
+                        {r === 'Holo'
+                          ? setCards.filter((c) => c.holo === true).length
+                          : setCards.filter((c) => c.rarity === r).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="collection__sort-toggle" role="group" aria-label="Sort order">
+                <button
+                  className={`sort-btn${sortBy === 'rarity' ? ' sort-btn--active' : ''}`}
+                  onClick={() => setSortBy('rarity')}
+                >
+                  Rarity
+                </button>
+                <button
+                  className={`sort-btn${sortBy === 'count' ? ' sort-btn--active' : ''}`}
+                  onClick={() => setSortBy('count')}
+                >
+                  Count
+                </button>
+              </div>
+            </div>
+            {economyMode && setCards.some((c) => (c.count ?? 1) > 1) && (
+              <div className="collection__sell-all-row">
+                <button
+                  className="btn-coll-sell-all"
+                  onClick={() => {
+                    for (const card of setCards) {
+                      const dupes = (card.count ?? 1) - 1;
+                      for (let i = 0; i < dupes; i++) onSellCard?.(card);
+                    }
+                  }}
+                >
+                  Sell All Duplicates ({setCards.reduce((sum, c) => sum + Math.max((c.count ?? 1) - 1, 0), 0)})
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -209,7 +257,20 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
           <div className="collection__grid">
             {displayed.map((card) => (
               <div key={card.id} className="collection__card-wrap">
-                <PokemonCard card={card} size="normal" showCount={true} onClick={setModalCard} />
+                <div className="collection__card-inner">
+                  <PokemonCard card={card} size="normal" showCount={true} onClick={setModalCard} />
+                  {economyMode && (card.count ?? 1) > 1 && (
+                    <button
+                      className="btn-sell-card btn-sell-card--coll"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSellCard?.(card);
+                      }}
+                    >
+                      🪙 {getCardSellPrice?.(card) ?? 0}
+                    </button>
+                  )}
+                </div>
                 <p className="collection__card-name">{card.name}</p>
               </div>
             ))}

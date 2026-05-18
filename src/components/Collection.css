@@ -73,10 +73,67 @@
 }
 
 /* ── Filter tabs ─────────────────────────────────────────────── */
+
+/* Row that holds filter tabs + sort toggle side by side */
+.collection__filters-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .collection__filters {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+/* Sort toggle */
+.collection__sort-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid #1e293b;
+  border-radius: 999px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sort-btn {
+  padding: 5px 14px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.sort-btn + .sort-btn { border-left: 1px solid #1e293b; }
+.sort-btn--active { background: #1e293b; color: #fbbf24; }
+.sort-btn:hover:not(.sort-btn--active) { color: #94a3b8; }
+
+/* Sell all duplicates row */
+.collection__sell-all-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-coll-sell-all {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ade80;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-coll-sell-all:hover {
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.6);
 }
 
 .filter-tab {
@@ -134,6 +191,37 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+}
+
+/* Inner wrapper for economy sell button positioning */
+.collection__card-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Sell button variant for collection view */
+.btn-sell-card--coll {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(34, 197, 94, 0.85);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+  z-index: 5;
+  transition: background 0.12s, transform 0.1s;
+}
+.btn-sell-card--coll:hover {
+  background: #16a34a;
+  transform: translateX(-50%) translateY(-1px);
 }
 
 .collection__card-name {

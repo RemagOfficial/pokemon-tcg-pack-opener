@@ -69,7 +69,7 @@ export default function CardModal({ card, onClose }) {
   if (!card) return null;
 
   const imageUrl = getCardImageUrl(card, 'high');
-  const isHolo = card.rarity === 'Rare Holo';
+  const isHolo = card.holo === true;
   const rarityColor = RARITY_COLOR[card.rarity] ?? '#9ca3af';
 
   // ── Mouse tilt (desktop) ─────────────────────────────────────────────────
@@ -125,7 +125,7 @@ export default function CardModal({ card, onClose }) {
         <div className="card-modal-meta">
           <h2 className="card-modal-name">{card.name}</h2>
           <span className="card-modal-rarity" style={{ color: rarityColor }}>
-            {card.rarity === 'Rare Holo' ? '★ Holo Rare' : card.rarity}
+            {card.rarity}{isHolo && <span style={{ color: '#c084fc' }}> ✦ Holo</span>}
           </span>
           <span className="card-modal-set">Base Set · #{card.localId}</span>
         </div>

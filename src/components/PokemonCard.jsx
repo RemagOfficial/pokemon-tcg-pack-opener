@@ -2,12 +2,12 @@ import { getCardImageUrl } from '../services/tcgdex.js';
 import './PokemonCard.css';
 
 const RARITY_LABEL = {
-  'Common':      { label: '●',    color: '#9ca3af' },
-  'Uncommon':    { label: '◆◆',  color: '#4ade80' },
-  'Rare':        { label: '★',    color: '#60a5fa' },
-  'Rare Holo':   { label: '★ H', color: '#c084fc' },
-  'Secret Rare': { label: '★★',  color: '#fbbf24' },
+  'Common':      { label: '●',  color: '#9ca3af' },
+  'Uncommon':    { label: '◆',  color: '#4ade80' },
+  'Rare':        { label: '★',  color: '#60a5fa' },
+  'Secret Rare': { label: '★★', color: '#fbbf24' },
 };
+const HOLO_SUFFIX = { label: ' ✦', color: '#c084fc' };
 
 export default function PokemonCard({ card, size = 'normal', showCount = false, onClick, unowned = false, secretUnowned = false }) {
   // Secret rare not yet found – render a fully blacked-out mystery card
@@ -23,9 +23,9 @@ export default function PokemonCard({ card, size = 'normal', showCount = false, 
   }
 
   const imageUrl = getCardImageUrl(card, 'high');
-  const isHolo = card.rarity === 'Rare Holo';
+  const isHolo = card.holo === true;
   const isSecretRare = card.rarity === 'Secret Rare';
-  const { label, color } = RARITY_LABEL[card.rarity] ?? RARITY_LABEL['Common'];
+  const base = RARITY_LABEL[card.rarity] ?? RARITY_LABEL['Common'];
 
   return (
     <div
@@ -40,8 +40,9 @@ export default function PokemonCard({ card, size = 'normal', showCount = false, 
         draggable="false"
       />
       {isHolo && !unowned && <div className="pcard__holo-overlay" />}
-      <div className="pcard__rarity" style={{ color }}>
-        {label}
+      <div className="pcard__rarity">
+        <span style={{ color: base.color }}>{base.label}</span>
+        {isHolo && <span style={{ color: HOLO_SUFFIX.color }}>{HOLO_SUFFIX.label}</span>}
       </div>
       {showCount && card.count > 1 && (
         <div className="pcard__count">×{card.count}</div>
