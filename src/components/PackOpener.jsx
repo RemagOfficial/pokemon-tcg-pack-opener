@@ -34,7 +34,7 @@ function PackGraphic({ state, setName }) {
 // phases: idle → opening → revealing → summary
 //
 // cardState (during revealing): facedown → flipping → faceup → hiding
-export default function PackOpener({ cards, setName, onCardsAdded, collection, cheatVisible, forceHolo, onToggleForceHolo, onChangeSet }) {
+export default function PackOpener({ cards, setName, onCardsAdded, collection, onChangeSet }) {
   const [phase,        setPhase]        = useState('idle');
   const [packCards,    setPackCards]    = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -110,14 +110,14 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, c
   const handleOpenPack = useCallback(() => {
     clearTimers();
     preOpenCollectionRef.current = new Set(collectionRef.current.map((c) => c.id));
-    const drawn = openPack(cards, { forceHolo });
+    const drawn = openPack(cards);
     packCardsRef.current = drawn;
     setPackCards(drawn);
     setCurrentIndex(0);
     setCardState('facedown');
     setPhase('opening');
     openingTimerRef.current = setTimeout(() => setPhase('revealing'), 700);
-  }, [cards, clearTimers, forceHolo]);
+  }, [cards, clearTimers]);
 
   const handleSkipToSummary = useCallback(() => {
     clearTimers();
@@ -316,16 +316,6 @@ export default function PackOpener({ cards, setName, onCardsAdded, collection, c
         <CardModal card={modalCard} onClose={() => setModalCard(null)} />
       )}
 
-      {/* ── Cheat toggle (revealed by typing "holo") ── */}
-      {cheatVisible && (
-        <button
-          className={`cheat-toggle${forceHolo ? ' cheat-toggle--on' : ''}`}
-          onClick={onToggleForceHolo}
-          title='Type "holo" to hide'
-        >
-          ✦ {forceHolo ? '100% HOLO  ON' : '100% HOLO  OFF'}
-        </button>
-      )}
     </div>
   );
 }

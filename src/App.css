@@ -323,30 +323,4 @@
 }
 .set-complete-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(251,191,36,0.55); }
 
-/* ── Cheat keycombo toast ── */
-.app-toast {
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 22px;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(232, 121, 249, 0.45);
-  color: #e879f9;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  border-radius: 999px;
-  backdrop-filter: blur(8px);
-  pointer-events: none;
-  z-index: 200;
-  animation: toastIn 0.25s ease, toastOut 0.3s ease 1.9s forwards;
-}
-@keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-@keyframes toastOut {
-  to { opacity: 0; transform: translateX(-50%) translateY(6px); }
-}
 

@@ -71,35 +71,6 @@ export default function App() {
     await loadSet(setId);
   }, [loadSet]);
 
-  // ── Cheat toggle ───────────────────────────────────────────────────────────
-  const [cheatVisible, setCheatVisible] = useState(false);
-  const [forceHolo,    setForceHolo]    = useState(false);
-  const [toast,        setToast]        = useState(null);
-  const toastTimerRef = useRef(null);
-
-  const showToast = useCallback((msg) => {
-    clearTimeout(toastTimerRef.current);
-    setToast(msg);
-    toastTimerRef.current = setTimeout(() => setToast(null), 2200);
-  }, []);
-
-  const konamiRef = useRef('');
-  useEffect(() => {
-    const SECRET = 'holo';
-    const onKey = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      konamiRef.current = (konamiRef.current + e.key.toLowerCase()).slice(-SECRET.length);
-      if (konamiRef.current === SECRET) {
-        setCheatVisible((v) => {
-          showToast(v ? 'Cheat panel hidden' : '✦ Holo luck toggle unlocked');
-          return !v;
-        });
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showToast]);
-
   const { collection, addCards } = useCollection();
 
   // ── Set completion reward ──────────────────────────────────────────────────
@@ -214,9 +185,6 @@ export default function App() {
                 setName={currentSetConfig?.name ?? ''}
                 onCardsAdded={addCards}
                 collection={collection}
-                cheatVisible={cheatVisible}
-                forceHolo={forceHolo}
-                onToggleForceHolo={() => setForceHolo((v) => !v)}
                 onChangeSet={() => {
                   setSelectedSetId(null);
                   try { localStorage.removeItem('pokemon_selected_set'); } catch { /* ignore */ }
@@ -244,7 +212,6 @@ export default function App() {
       </main>
     </div>
     {showSettings && <Settings onClose={() => setShowSettings(false)} />}
-    {toast && <div className="app-toast">{toast}</div>}
     {setComplete && (
       <div className="set-complete-overlay" onClick={() => setSetComplete(false)}>
         <div className="set-complete-modal" onClick={(e) => e.stopPropagation()}>
