@@ -14,19 +14,32 @@ function pickRandom(pool, count) {
 }
 
 export function openPack(allCards) {
-  const holoRares    = allCards.filter((c) => c.holo === true);
-  const rares        = allCards.filter((c) => c.rarity === 'Rare' && !c.holo);
-  const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon');
-  const commons      = allCards.filter((c) => c.rarity === 'Common');
-  const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare');
+  const holoRares    = allCards.filter((c) => c.holo === true && !c.reverseHolo);
+  const rares        = allCards.filter((c) => c.rarity === 'Rare' && !c.holo && !c.reverseHolo);
+  const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon' && !c.reverseHolo);
+  const commons      = allCards.filter((c) => c.rarity === 'Common' && !c.reverseHolo);
+  const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
+  const exCards      = allCards.filter((c) => c.rarity === 'Rare ex');
+  const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
+
+  // Sets with reverse holo cards (EX era+) get a dedicated reverse holo slot,
+  // replacing one common slot so the pack stays at 10 cards total.
+  const hasRH     = reverseHolos.length > 0;
+  const rhSlot    = hasRH ? pickRandom(reverseHolos, 1) : [];
 
   const uncommonCards = pickRandom(uncommons, 3);
-  const commonCards   = pickRandom(commons,   6);
+  const commonCards   = pickRandom(commons, hasRH ? 5 : 6);
 
   // Secret rare: ~1-in-45 chance, replaces the rare slot
   if (secretRares.length > 0 && Math.random() < 1 / 45) {
     const secretCard = pickRandom(secretRares, 1);
-    return [...commonCards, ...uncommonCards, ...secretCard];
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...secretCard];
+  }
+
+  // EX Pokemon: ~1-in-9 chance, replaces the rare slot
+  if (exCards.length > 0 && Math.random() < 1 / 9) {
+    const exCard = pickRandom(exCards, 1);
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...exCard];
   }
 
   // ~1-in-3 chance of a holo rare, otherwise a non-holo rare
@@ -36,6 +49,6 @@ export function openPack(allCards) {
   const effectivePool = rarePool.length ? rarePool : holoRares;
   const rareCard = pickRandom(effectivePool, 1);
 
-  // Order: commons at the bottom, uncommons in the middle, rare on top
-  return [...commonCards, ...uncommonCards, ...rareCard];
+  // Order: commons at the bottom, uncommons in the middle, [reverse holo], rare on top
+  return [...commonCards, ...uncommonCards, ...rhSlot, ...rareCard];
 }

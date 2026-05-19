@@ -6,6 +6,7 @@ const RARITY_COLOR = {
   'Common':    '#9ca3af',
   'Uncommon':  '#4ade80',
   'Rare':      '#60a5fa',
+  'Rare ex':   '#f97316',
   'Rare Holo': '#e879f9',
 };
 
@@ -70,6 +71,7 @@ export default function CardModal({ card, onClose }) {
 
   const imageUrl = getCardImageUrl(card, 'high');
   const isHolo = card.holo === true;
+  const isReverseHolo = card.reverseHolo === true;
   const rarityColor = RARITY_COLOR[card.rarity] ?? '#9ca3af';
 
   // ── Mouse tilt (desktop) ─────────────────────────────────────────────────
@@ -111,7 +113,7 @@ export default function CardModal({ card, onClose }) {
 
         <div
           ref={imageWrapRef}
-          className={`card-modal-image-wrap${isHolo ? ' card-modal-image-wrap--holo' : ''}`}
+          className={`card-modal-image-wrap${(isHolo || isReverseHolo) ? ' card-modal-image-wrap--holo' : ''}`}
         >
           <img
             src={imageUrl}
@@ -119,13 +121,13 @@ export default function CardModal({ card, onClose }) {
             className="card-modal-image"
             draggable="false"
           />
-          {isHolo && <div className="card-modal-holo" />}
+          {(isHolo || isReverseHolo) && <div className="card-modal-holo" />}
         </div>
 
         <div className="card-modal-meta">
           <h2 className="card-modal-name">{card.name}</h2>
           <span className="card-modal-rarity" style={{ color: rarityColor }}>
-            {card.rarity}{isHolo && <span style={{ color: '#c084fc' }}> ✦ Holo</span>}
+            {card.rarity}{isHolo && <span style={{ color: '#c084fc' }}> ✦ Holo</span>}{isReverseHolo && <span style={{ color: '#22d3ee' }}> ✦ Reverse Holo</span>}
           </span>
           <span className="card-modal-set">Base Set · #{card.localId}</span>
         </div>

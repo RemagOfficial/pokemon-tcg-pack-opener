@@ -247,6 +247,13 @@
   font-style: italic;
 }
 
+.collection__card-name--mystery {
+  color: #facc15;
+  font-style: italic;
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.4);
+  letter-spacing: 0.1em;
+}
+
 /* ── View toggle ──────────────────────────────────────────────────────── */
 .collection__view-toggle {
   display: flex;

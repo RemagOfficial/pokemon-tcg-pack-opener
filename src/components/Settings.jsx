@@ -3,6 +3,15 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.4.0',
+    date: '2026-05-19',
+    entries: [
+      'Full EX series added — EX Ruby & Sapphire through EX Power Keepers (ex1–ex16)',
+      'EX Pokémon cards detected by name and show an EX badge instead of the holo symbol',
+      'Series and year filters added to the Collection and Achievements screens',
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-05-19',
     entries: [

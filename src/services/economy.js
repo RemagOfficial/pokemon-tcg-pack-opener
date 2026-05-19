@@ -12,6 +12,9 @@ export const SET_ORDER = [
   'base1', 'base2', 'base3', 'base4', 'base5',
   'gym1',  'gym2',  'neo1',  'neo2',  'neo3',  'neo4',
   'lc',    'ecard1','ecard2','ecard3',
+  'ex1',   'ex2',   'ex3',   'ex4',   'ex5',   'ex6',
+  'ex7',   'ex8',   'ex9',   'ex10',  'ex11',
+  'ex12',  'ex13',  'ex14',  'ex15',  'ex16',
 ];
 
 // Build the price table once at module load
@@ -34,6 +37,7 @@ const RARITY_SELL_FACTOR = {
   'Common':      0.05,
   'Uncommon':    0.10,
   'Rare':        0.25,
+  'Rare ex':     0.60,
   'Secret Rare': 1.00,
 };
 const HOLO_SELL_MULTIPLIER = 1.5;

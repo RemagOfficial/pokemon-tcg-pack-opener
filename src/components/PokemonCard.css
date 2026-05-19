@@ -126,18 +126,20 @@
 
 /* ── Secret Rare unowned (mystery card) ──────────────────────────────── */
 .pcard--secret-unowned {
-  background: #000;
+  background: #0a0a0a;
   border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8);
+  border: 2px solid #1e293b;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 .pcard__mystery-q {
-  font-size: 4rem;
+  font-size: 5rem;
   font-weight: 900;
-  color: #1e293b;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(250, 204, 21, 0.7), 0 0 40px rgba(250, 204, 21, 0.3);
   user-select: none;
   line-height: 1;
 }

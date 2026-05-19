@@ -1,24 +1,53 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import PokemonCard from './PokemonCard.jsx';
 import CardModal from './CardModal.jsx';
 import { SETS } from '../services/sets.js';
 import './Collection.css';
+import './SetSelector.css';
 
-const RARITIES = ['All', 'Holo', 'Rare', 'Uncommon', 'Common'];
-// Sort score: holo rares first, then non-holo rares, uncommons, commons
+const ALL_SERIES = [...new Set(SETS.map((s) => s.series))];
+const ALL_YEARS  = [...new Set(SETS.map((s) => s.year))].sort();
+function toggleSet(set, value) {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value); else next.add(value);
+  return next;
+}
+
+const RARITIES = ['All', 'Holo', 'EX', 'Rare', 'Uncommon', 'Common'];
+// Sort score: EX Pokemon first, then holo rares, non-holo rares, uncommons, commons
 const sortScore = (card) => {
-  if (card.holo  && card.rarity === 'Rare')     return 0;
-  if (!card.holo && card.rarity === 'Rare')     return 1;
-  if (card.holo)                                return 2; // holo non-rare (edge case)
-  if (card.rarity === 'Uncommon')               return 3;
-  if (card.rarity === 'Common')                 return 4;
-  return 5;
+  if (card.rarity === 'Rare ex')                              return 0; // EX Pokemon
+  if (card.holo  && card.rarity === 'Rare')                  return 1; // holo rare
+  if (card.reverseHolo && card.rarity === 'Rare')            return 2; // reverse holo rare
+  if (!card.holo && !card.reverseHolo && card.rarity === 'Rare') return 3; // non-holo rare
+  if (card.reverseHolo)                                      return 4; // reverse holo (non-rare)
+  if (card.holo)                                             return 5; // holo non-rare (edge case)
+  if (card.rarity === 'Uncommon')                            return 6;
+  if (card.rarity === 'Common')                              return 7;
+  return 8;
 };
 
 export default function Collection({ collection, loadedSets = {}, setSymbols = {}, onLoadSet, economyMode = false, onSellCard, getCardSellPrice }) {
   const [activeSetId, setActiveSetId] = useState(null);
   const [hideComplete, setHideComplete] = useState(false);
   const [filter, setFilter] = useState('All');
+  const [showFilter, setShowFilter] = useState(false);
+  const [selSeries, setSelSeries] = useState(new Set());
+  const [selYears,  setSelYears]  = useState(new Set());
+  const filterPopupRef = useRef(null);
+
+  useEffect(() => {
+    if (!showFilter) return;
+    const handler = (e) => {
+      if (filterPopupRef.current && !filterPopupRef.current.contains(e.target)) setShowFilter(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('touchstart', handler);
+    };
+  }, [showFilter]);
   const [sortBy, setSortBy] = useState('rarity'); // 'rarity' | 'count'
   const [viewMode, setViewMode] = useState('collection');
   const [modalCard, setModalCard] = useState(null);
@@ -36,7 +65,8 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
   const displayed = useMemo(() => {
     let base;
     if (filter === 'All')  base = setCards;
-    else if (filter === 'Holo') base = setCards.filter((c) => c.holo === true);
+    else if (filter === 'Holo') base = setCards.filter((c) => c.holo === true || c.reverseHolo === true);
+    else if (filter === 'EX')   base = setCards.filter((c) => c.rarity === 'Rare ex');
     else base = setCards.filter((c) => c.rarity === filter);
     return [...base].sort((a, b) => {
       if (sortBy === 'count') {
@@ -64,7 +94,12 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
       ownedOfficialBySet[sid] = (ownedOfficialBySet[sid] ?? 0) + 1;
     }
 
+    const activeFilterCount = selSeries.size + selYears.size;
+    const clearAllFilters = () => { setSelSeries(new Set()); setSelYears(new Set()); };
+
     const visibleSets = SETS.filter((set) => {
+      if (selSeries.size > 0 && !selSeries.has(set.series)) return false;
+      if (selYears.size  > 0 && !selYears.has(set.year))   return false;
       if (!hideComplete) return true;
       const owned = ownedOfficialBySet[set.id] ?? 0;
       const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare').length) ?? set.totalCards;
@@ -84,6 +119,55 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
               />
               Hide completed
             </label>
+          </div>
+
+          <div className="ss-filter-bar">
+            <button
+              className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
+              onClick={() => setShowFilter((v) => !v)}
+              aria-expanded={showFilter}
+            >
+              <span>Filter</span>
+              {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
+            </button>
+            {activeFilterCount > 0 && (
+              <div className="ss-chips">
+                {[...selSeries].map((s) => (
+                  <button key={s} className="ss-chip" onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s} &times;</button>
+                ))}
+                {[...selYears].map((y) => (
+                  <button key={y} className="ss-chip" onClick={() => setSelYears(toggleSet(selYears, y))}>{y} &times;</button>
+                ))}
+                <button className="ss-chip ss-chip--clear" onClick={clearAllFilters}>Clear all</button>
+              </div>
+            )}
+            {showFilter && (
+              <div className="ss-popup" ref={filterPopupRef}>
+                <div className="ss-popup__section">
+                  <span className="ss-popup__label">Series</span>
+                  <div className="ss-popup__options">
+                    {ALL_SERIES.map((s) => (
+                      <button key={s} className={`ss-option${selSeries.has(s) ? ' ss-option--on' : ''}`} onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="ss-popup__divider" />
+                <div className="ss-popup__section">
+                  <span className="ss-popup__label">Year</span>
+                  <div className="ss-popup__options ss-popup__options--years">
+                    {ALL_YEARS.map((y) => (
+                      <button key={y} className={`ss-option${selYears.has(y) ? ' ss-option--on' : ''}`} onClick={() => setSelYears(toggleSet(selYears, y))}>{y}</button>
+                    ))}
+                  </div>
+                </div>
+                {activeFilterCount > 0 && (
+                  <>
+                    <div className="ss-popup__divider" />
+                    <button className="ss-popup__clear" onClick={() => { clearAllFilters(); setShowFilter(false); }}>Clear all filters</button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="coll-set-list">
@@ -202,8 +286,10 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                     {r !== 'All' && (
                       <span className="filter-tab__count">
                         {r === 'Holo'
-                          ? setCards.filter((c) => c.holo === true).length
-                          : setCards.filter((c) => c.rarity === r).length}
+                          ? setCards.filter((c) => c.holo === true || c.reverseHolo === true).length
+                          : r === 'EX'
+                            ? setCards.filter((c) => c.rarity === 'Rare ex').length
+                            : setCards.filter((c) => c.rarity === r).length}
                       </span>
                     )}
                   </button>
@@ -301,8 +387,8 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                   unowned={!isOwned && !isSecretRare}
                   secretUnowned={isSecretRare && !isOwned}
                 />
-                <p className={`collection__card-name${isOwned ? '' : ' collection__card-name--unowned'}`}>
-                  {isOwned ? card.name : (isSecretRare ? '???' : '???')}
+                <p className={`collection__card-name${isOwned ? '' : (isSecretRare ? ' collection__card-name--mystery' : ' collection__card-name--unowned')}`}>
+                  {isOwned ? card.name : '???'}
                 </p>
               </div>
             );

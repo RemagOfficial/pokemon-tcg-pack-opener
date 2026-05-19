@@ -139,7 +139,8 @@ export default function PackOpener({
   }, [clearTimers]);
 
   const currentCard    = packCards[currentIndex];
-  const isHolo         = currentCard?.holo === true || currentCard?.rarity === 'Secret Rare';
+  const isLastCard     = currentIndex === packCards.length - 1;
+  const isHolo         = isLastCard && (currentCard?.holo === true || currentCard?.rarity === 'Secret Rare');
   const isNewCard      = currentCard != null && !preOpenCollectionRef.current.has(currentCard.id);
 
   const handleCardClick = useCallback(() => {

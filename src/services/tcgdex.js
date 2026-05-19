@@ -5,7 +5,7 @@ import { getSetConfig, inferRarity } from './sets.js';
 const sdk = new TCGdex('en');
 
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days - WotC sets never change
-const CACHE_VERSION = 'v4'; // bump when card shape changes to invalidate old caches
+const CACHE_VERSION = 'v7'; // bump when card shape changes to invalidate old caches
 
 /**
  * Normalise a TCGdex rarity string to one of: Common | Uncommon | Rare | Secret Rare
@@ -22,7 +22,7 @@ function normalizeRarity(r) {
  * Returns { holo: bool, normal: bool, apiRarity: string|null } or null on failure.
  */
 async function fetchCardVariants(cardId) {
-  const cacheKey = `cv_${cardId}`;
+  const cacheKey = `cv2_${cardId}`;
   const cached = cacheGet(cacheKey);
   if (cached !== null) return cached === false ? null : cached;
 
@@ -30,8 +30,9 @@ async function fetchCardVariants(cardId) {
     const detail = await sdk.card.get(cardId);
     const v = detail?.variants ?? null;
     const result = {
-      holo:      v ? !!v.holo   : false,
-      normal:    v ? !!v.normal : true,
+      holo:      v ? !!v.holo    : false,
+      normal:    v ? !!v.normal  : true,
+      reverse:   v ? !!v.reverse : false,
       apiRarity: detail?.rarity ?? null,
     };
     cacheSet(cacheKey, result, CACHE_TTL);
@@ -140,6 +141,14 @@ export async function loadSetCards(setId) {
       const inf = card.rarity;
       rarity = (inf === 'Rare Holo' || inf === 'Holo Variant') ? 'Rare' : (inf ?? 'Common');
     }
+    // Pokemon-ex detection: names containing ' ex' at end or followed by space/δ (e.g. 'Blaziken ex', 'Altaria ex δ')
+    if (/\sex(\s|$)/i.test(card.name)) rarity = 'Rare ex';
+
+    // Cards numbered above the set's official total are secret rares regardless of API data
+    const numericId = parseInt(card.localId, 10);
+    if (!isNaN(numericId) && setConfig?.totalCards && numericId > setConfig.totalCards) {
+      rarity = 'Secret Rare';
+    }
 
     // --- Holo flag ---
     const isHolo = vd !== null
@@ -178,8 +187,77 @@ export async function loadSetCards(setId) {
     return { ...card, rarity, holo: isHolo, image };
   });
 
-  cacheSet(cacheKey, cards, CACHE_TTL);
-  return cards;
+  // Step 6: generate reverse holo entries for cards that have a reverse variant.
+  // Each gets id '<originalId>_rh', reverseHolo: true, holo: false.
+  // EX Pokemon (Rare ex) never appear in the reverse holo slot.
+  const reverseHoloCards = cards
+    .filter((card) => {
+      const vd = variantMap.get(card.id);
+      return vd?.reverse === true && card.rarity !== 'Rare ex' && card.rarity !== 'Secret Rare';
+    })
+    .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false }));
+
+  let allCards = reverseHoloCards.length > 0 ? [...cards, ...reverseHoloCards] : [...cards];
+
+  // Merge additional TCGdex sets into this one (e.g. exu Unown into ex10)
+  if (setConfig.mergeSets?.length) {
+    for (const mergeSetId of setConfig.mergeSets) {
+      try {
+        const mergeSet = await sdk.set.get(mergeSetId);
+        if (!mergeSet?.cards) continue;
+
+        const mergeRaw = mergeSet.cards.map((resume) => ({
+          id:      resume.id,
+          localId: resume.localId,
+          name:    resume.name,
+          rarity:  'Common',       // placeholder; overridden below
+          image:   resume.image ?? null,
+          setId,                   // treat as belonging to the main set
+        }));
+
+        // Batch-fetch variants for merge cards
+        const mergeVariantMap = new Map();
+        for (let i = 0; i < mergeRaw.length; i += BATCH) {
+          const slice   = mergeRaw.slice(i, i + BATCH);
+          const results = await Promise.all(slice.map((c) => fetchCardVariants(c.id)));
+          slice.forEach((c, j) => mergeVariantMap.set(c.id, results[j]));
+        }
+
+        // Assign rarity, holo — same rules as main pipeline
+        const mergeCards = mergeRaw.map((card) => {
+          const vd = mergeVariantMap.get(card.id);
+          let rarity;
+          if (vd?.apiRarity) {
+            rarity = normalizeRarity(vd.apiRarity) ?? 'Common';
+          } else {
+            rarity = 'Common';
+          }
+          if (/\sex(\s|$)/i.test(card.name)) rarity = 'Rare ex';
+          const numericId = parseInt(card.localId, 10);
+          if (!isNaN(numericId) && setConfig?.totalCards && numericId > setConfig.totalCards) {
+            rarity = 'Secret Rare';
+          }
+          const isHolo = vd !== null ? vd.holo === true : false;
+          return { ...card, rarity, holo: isHolo };
+        });
+
+        // Reverse holos for merge cards
+        const mergeRH = mergeCards
+          .filter((card) => {
+            const vd = mergeVariantMap.get(card.id);
+            return vd?.reverse === true && card.rarity !== 'Rare ex' && card.rarity !== 'Secret Rare';
+          })
+          .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false }));
+
+        allCards.push(...mergeCards, ...mergeRH);
+      } catch (e) {
+        console.warn(`Failed to merge set ${mergeSetId} into ${setId}:`, e);
+      }
+    }
+  }
+
+  cacheSet(cacheKey, allCards, CACHE_TTL);
+  return allCards;
 }
 
 /** Keep compatibility alias. */
