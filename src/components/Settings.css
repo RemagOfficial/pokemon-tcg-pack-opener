@@ -114,6 +114,66 @@
   line-height: 1.4;
 }
 
+/* ── Reset progress ─────────────────────────────────────────── */
+.settings-section--danger .settings-section__title {
+  color: #f87171;
+}
+
+.btn-reset--open {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-reset--open:hover {
+  background: rgba(248, 113, 113, 0.2);
+}
+
+.settings-reset-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.settings-reset-confirm__text {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+.settings-reset-confirm__btns {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.btn-reset--cancel {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-reset--cancel:hover { background: rgba(148, 163, 184, 0.1); }
+.btn-reset--confirm {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-reset--confirm:hover { background: #dc2626; }
+
 /* ── Changelog ──────────────────────────────────────────────── */
 .changelog {
   display: flex;

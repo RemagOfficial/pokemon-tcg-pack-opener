@@ -3,6 +3,16 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.3.0',
+    date: '2026-05-19',
+    entries: [
+      'Set selector now has series and year filters with a popup panel',
+      'Sets labelled with their series (Base, Neo, Legendary Collection, e-Card)',
+      'Reset Progress option in Settings — clears collection, coins, and achievements without wiping card caches',
+      'Economy mode uses a separate collection so sandbox cards cannot be sold for coins',
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-05-18',
     entries: [
@@ -35,10 +45,11 @@ const CHANGELOG = [
   },
 ];
 
-export default function Settings({ onClose, mode = 'sandbox', onModeChange }) {
+export default function Settings({ onClose, mode = 'sandbox', onModeChange, onResetProgress }) {
   const [gyroDisabled, setGyroDisabled] = useState(
     () => localStorage.getItem('pkmon_gyro_disabled') === 'true'
   );
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const toggleGyro = () => {
     const next = !gyroDisabled;
@@ -49,6 +60,13 @@ export default function Settings({ onClose, mode = 'sandbox', onModeChange }) {
       localStorage.removeItem('pkmon_gyro_disabled');
     }
   };
+
+  const handleReset = () => {
+    onResetProgress?.();
+    setConfirmReset(false);
+    onClose();
+  };
+
   return (
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
@@ -77,7 +95,7 @@ export default function Settings({ onClose, mode = 'sandbox', onModeChange }) {
             <div className="settings-toggle-row">
               <div>
                 <span className="settings-toggle-label">Economy Mode</span>
-                <p className="settings-toggle-desc">Buy packs with coins, sell duplicates, and flip a coin when you&apos;re broke.</p>
+                <p className="settings-toggle-desc">Buy packs with coins, sell duplicates, and flip a coin when you are broke.</p>
               </div>
               <label className="settings-toggle">
                 <input
@@ -88,6 +106,29 @@ export default function Settings({ onClose, mode = 'sandbox', onModeChange }) {
                 <span className="settings-toggle-track" />
               </label>
             </div>
+          </section>
+
+          <section className="settings-section settings-section--danger">
+            <h3 className="settings-section__title">Data</h3>
+            {confirmReset ? (
+              <div className="settings-reset-confirm">
+                <p className="settings-reset-confirm__text">
+                  This will delete your {mode === 'economy' ? 'economy' : 'sandbox'} collection, coins, free packs, and achievements. Card caches are kept. This cannot be undone.
+                </p>
+                <div className="settings-reset-confirm__btns">
+                  <button className="btn-reset btn-reset--cancel" onClick={() => setConfirmReset(false)}>Cancel</button>
+                  <button className="btn-reset btn-reset--confirm" onClick={handleReset}>Yes, reset</button>
+                </div>
+              </div>
+            ) : (
+              <div className="settings-toggle-row">
+                <div>
+                  <span className="settings-toggle-label">Reset Progress</span>
+                  <p className="settings-toggle-desc">Delete your current collection, coins, and achievements. Caches are kept.</p>
+                </div>
+                <button className="btn-reset btn-reset--open" onClick={() => setConfirmReset(true)}>Reset</button>
+              </div>
+            )}
           </section>
 
           <section className="settings-section">

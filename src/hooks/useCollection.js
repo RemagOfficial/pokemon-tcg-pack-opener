@@ -1,26 +1,24 @@
 import { useState, useCallback } from 'react';
 
-const COLLECTION_KEY = 'pokemon_collection';
-
-function loadCollection() {
+function loadCollection(key) {
   try {
-    const raw = localStorage.getItem(COLLECTION_KEY);
+    const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function persist(collection) {
-  localStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
+function persist(key, collection) {
+  localStorage.setItem(key, JSON.stringify(collection));
 }
 
-export function useCollection() {
-  const [collection, setCollection] = useState(loadCollection);
+export function useCollection(storageKey = 'pokemon_collection') {
+  const [collection, setCollection] = useState(() => loadCollection(storageKey));
 
   const addCards = useCallback((cards) => {
     setCollection((prev) => {
-      const updated = prev.map((c) => ({ ...c })); // shallow clone each entry
+      const updated = prev.map((c) => ({ ...c }));
       for (const card of cards) {
         const existing = updated.find((c) => c.id === card.id);
         if (existing) {
@@ -29,21 +27,25 @@ export function useCollection() {
           updated.push({ ...card, count: 1 });
         }
       }
-      persist(updated);
+      persist(storageKey, updated);
       return updated;
     });
-  }, []);
+  }, [storageKey]);
 
-  // Sell one copy of a card (decrements count; removes entry if count reaches 0)
   const sellCard = useCallback((cardId) => {
     setCollection((prev) => {
       const updated = prev
         .map((c) => (c.id === cardId ? { ...c, count: (c.count ?? 1) - 1 } : c))
         .filter((c) => (c.count ?? 0) > 0);
-      persist(updated);
+      persist(storageKey, updated);
       return updated;
     });
-  }, []);
+  }, [storageKey]);
 
-  return { collection, addCards, sellCard };
+  const resetCollection = useCallback(() => {
+    localStorage.removeItem(storageKey);
+    setCollection([]);
+  }, [storageKey]);
+
+  return { collection, addCards, sellCard, resetCollection };
 }

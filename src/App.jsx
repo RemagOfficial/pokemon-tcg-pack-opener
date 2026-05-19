@@ -75,13 +75,16 @@ export default function App() {
     await loadSet(setId);
   }, [loadSet]);
 
-  const { collection, addCards, sellCard } = useCollection();
-
   // ── Game mode ──────────────────────────────────────────────────────────────
   const [mode, setMode] = useState(() => {
     try { return localStorage.getItem('pkmon_mode') ?? 'sandbox'; } catch { return 'sandbox'; }
   });
   const economyMode = mode === 'economy';
+
+  // Separate collections per mode so economy players can't sell sandbox cards
+  const sandboxCol = useCollection('pokemon_collection');
+  const economyCol = useCollection('pkmon_eco_collection');
+  const { collection, addCards, sellCard, resetCollection } = economyMode ? economyCol : sandboxCol;
 
   const handleModeChange = useCallback((newMode) => {
     setMode(newMode);
@@ -89,7 +92,7 @@ export default function App() {
   }, []);
 
   // ── Economy (coins) ──────────────────────────────────────────────────────
-  const { coins, spend, earn } = useEconomy();
+  const { coins, spend, earn, reset: resetCoins } = useEconomy();
   const [showCoinFlip, setShowCoinFlip] = useState(false);
 
   // Free pack tokens per set: { [setId]: count }
@@ -208,6 +211,17 @@ export default function App() {
   // claimedAchievements intentionally omitted — we only re-run on collection/cards change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collection, allLoadedCards, economyMode]);
+
+  // ── Reset progress ──────────────────────────────────────────────────────────
+  const resetProgress = useCallback(() => {
+    resetCollection();
+    resetCoins();
+    setFreePacks({});
+    try { localStorage.removeItem('pkmon_free_packs'); } catch { /* ignore */ }
+    setClaimedAchievements(new Set());
+    try { localStorage.removeItem('pkmon_claimed_ach'); } catch { /* ignore */ }
+    prevOwnedPerSet.current = {};
+  }, [resetCollection, resetCoins]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
@@ -359,7 +373,7 @@ export default function App() {
         )}
       </main>
     </div>
-    {showSettings && <Settings onClose={() => setShowSettings(false)} mode={mode} onModeChange={handleModeChange} />}
+    {showSettings && <Settings onClose={() => setShowSettings(false)} mode={mode} onModeChange={handleModeChange} onResetProgress={resetProgress} />}
     {showCoinFlip && (
       <CoinFlip
         eligibleSets={eligibleFlipSets}

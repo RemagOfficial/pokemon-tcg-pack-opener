@@ -9,6 +9,7 @@ export const SETS = [
   {
     id: 'base1',
     name: 'Base Set',
+    series: 'Base',
     year: '1999',
     totalCards: 102,
     symbol: '◆',
@@ -29,6 +30,7 @@ export const SETS = [
   {
     id: 'base2',
     name: 'Jungle',
+    series: 'Base',
     year: '1999',
     totalCards: 64,
     symbol: '🌴',
@@ -49,6 +51,7 @@ export const SETS = [
   {
     id: 'base3',
     name: 'Fossil',
+    series: 'Base',
     year: '1999',
     totalCards: 62,
     symbol: '◈',
@@ -69,6 +72,7 @@ export const SETS = [
   {
     id: 'base4',
     name: 'Base Set 2',
+    series: 'Base',
     year: '2000',
     totalCards: 130,
     symbol: '◉',
@@ -89,6 +93,7 @@ export const SETS = [
   {
     id: 'base5',
     name: 'Team Rocket',
+    series: 'Base',
     year: '2000',
     totalCards: 82, // card 83 (Dark Raichu) is a secret rare – not in official count
     symbol: 'R',
@@ -112,6 +117,7 @@ export const SETS = [
   {
     id: 'gym1',
     name: 'Gym Heroes',
+    series: 'Base',
     year: '2000',
     totalCards: 132,
     symbol: '⊙',
@@ -127,6 +133,7 @@ export const SETS = [
   {
     id: 'gym2',
     name: 'Gym Challenge',
+    series: 'Base',
     year: '2000',
     totalCards: 132,
     symbol: '⊕',
@@ -143,6 +150,7 @@ export const SETS = [
   {
     id: 'neo1',
     name: 'Neo Genesis',
+    series: 'Neo',
     year: '2000',
     totalCards: 111,
     symbol: '◈',
@@ -159,6 +167,7 @@ export const SETS = [
   {
     id: 'neo2',
     name: 'Neo Discovery',
+    series: 'Neo',
     year: '2001',
     totalCards: 75,
     symbol: '✦',
@@ -174,6 +183,7 @@ export const SETS = [
   {
     id: 'neo3',
     name: 'Neo Revelation',
+    series: 'Neo',
     year: '2001',
     totalCards: 64, // cards 65–66 (Shining Gyarados & Magikarp) are secret rares
     symbol: '✺',
@@ -190,6 +200,7 @@ export const SETS = [
   {
     id: 'neo4',
     name: 'Neo Destiny',
+    series: 'Neo',
     year: '2002',
     totalCards: 105, // cards 106–113 (Shining Pokémon) are secret rares
     symbol: '⬡',
@@ -207,6 +218,7 @@ export const SETS = [
   {
     id: 'lc',
     name: 'Legendary Collection',
+    series: 'Legendary Collection',
     year: '2002',
     totalCards: 110,
     symbol: 'LC',
@@ -223,6 +235,7 @@ export const SETS = [
   {
     id: 'ecard1',
     name: 'Expedition Base Set',
+    series: 'e-Card',
     year: '2002',
     totalCards: 165,
     symbol: 'EX',
@@ -239,6 +252,7 @@ export const SETS = [
   {
     id: 'ecard2',
     name: 'Aquapolis',
+    series: 'e-Card',
     year: '2003',
     totalCards: 185,
     symbol: 'AQ',
@@ -255,6 +269,7 @@ export const SETS = [
   {
     id: 'ecard3',
     name: 'Skyridge',
+    series: 'e-Card',
     year: '2003',
     totalCards: 182,
     symbol: 'SK',
