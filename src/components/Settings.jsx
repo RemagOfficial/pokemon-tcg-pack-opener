@@ -3,6 +3,16 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.5.0',
+    date: '2026-05-19',
+    entries: [
+      'Favourites — heart any card in the fullscreen view to save it to your favourites',
+      'Favourites collection — browse all your favourite cards in one place from the Collection screen',
+      'Showcase — curate up to 10 favourite cards and export a shareable PNG image',
+      'Stats — track packs opened and most-pulled card per set',
+    ],
+  },
+  {
     version: '1.4.0',
     date: '2026-05-19',
     entries: [

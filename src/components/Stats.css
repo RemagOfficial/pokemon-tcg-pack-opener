@@ -1,0 +1,141 @@
+.stats-screen {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  color: #e2e8f0;
+}
+
+.stats-screen__header {
+  margin-bottom: 24px;
+}
+
+.stats-screen__title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  margin: 0 0 4px;
+  color: #f8fafc;
+}
+
+.stats-screen__sub {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ── Table ─────────────────────────────────────────────────── */
+.stats-table-wrap {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid #334155;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.stats-th {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.stats-th--num,
+.stats-td--num {
+  text-align: right;
+}
+
+.stats-row {
+  border-top: 1px solid #1e293b;
+  transition: background 0.1s;
+}
+
+.stats-row:hover {
+  background: #1e293b;
+}
+
+.stats-row--zero {
+  opacity: 0.5;
+}
+
+.stats-td {
+  padding: 10px 16px;
+  vertical-align: middle;
+}
+
+/* Set column */
+.stats-td--set {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-set-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stats-set-name {
+  color: #e2e8f0;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stats-set-year {
+  color: #475569;
+  font-size: 0.78rem;
+}
+
+/* Packs column */
+.stats-packs {
+  color: #60a5fa;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Most pulled column */
+.stats-pull {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stats-pull__name {
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+.stats-pull__count {
+  background: #334155;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.stats-zero {
+  color: #334155;
+}
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 500px) {
+  .stats-th,
+  .stats-td {
+    padding: 8px 10px;
+  }
+
+  .stats-set-year {
+    display: none;
+  }
+}

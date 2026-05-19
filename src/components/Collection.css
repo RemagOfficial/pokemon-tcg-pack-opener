@@ -219,6 +219,25 @@
   z-index: 5;
   transition: background 0.12s, transform 0.1s;
 }
+
+/* Favourite heart badge on collection cards */
+.coll-fav-badge {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 0.7rem;
+  color: #f43f5e;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  line-height: 1;
+}
 .btn-sell-card--coll:hover {
   background: #16a34a;
   transform: translateX(-50%) translateY(-1px);

@@ -3,14 +3,19 @@ import PackOpener from './components/PackOpener.jsx';
 import Collection from './components/Collection.jsx';
 import Achievements from './components/Achievements.jsx';
 import SetSelector from './components/SetSelector.jsx';
+import Showcase from './components/Showcase.jsx';
+import Stats from './components/Stats.jsx';
 import { useCollection } from './hooks/useCollection.js';
 import { useEconomy } from './hooks/useEconomy.js';
 import { loadSetCards, loadAllSetSymbols } from './services/tcgdex.js';
 import { SETS } from './services/sets.js';
 import { PACK_PRICES, getSellPrice, STARTING_BALANCE } from './services/economy.js';
 import { ACHIEVEMENT_SETS, computeProgress, getAchievementReward } from './services/achievements.js';
+import { resetStats, recordSetCompletion } from './services/stats.js';
 import Settings from './components/Settings.jsx';
 import CoinFlip from './components/CoinFlip.jsx';
+import AchToast from './components/AchToast.jsx';
+import DevPanel from './components/DevPanel.jsx';
 import './App.css';
 
 // Persist + restore the last-selected set id
@@ -162,6 +167,7 @@ export default function App() {
         setSetCompleteName(cfg?.name ?? setId);
         setSetCompleteTotal(setCards.length);
         setSetComplete(true);
+        recordSetCompletion(setId);
       }
       prevOwnedPerSet.current[setId] = currentOwned;
     }
@@ -172,39 +178,48 @@ export default function App() {
     try { return new Set(JSON.parse(localStorage.getItem('pkmon_claimed_ach') ?? '[]')); }
     catch { return new Set(); }
   });
-  const [achRewardNotif, setAchRewardNotif] = useState(null); // { title, packs }
+  const [achToasts, setAchToasts] = useState([]);
+
+  const dismissAchToast = useCallback((id) => {
+    setAchToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   useEffect(() => {
-    if (!economyMode || !allLoadedCards.length) return;
+    if (!allLoadedCards.length) return;
     const progress = computeProgress(allLoadedCards, collection);
     const newClaims = [];
-    for (const set of ACHIEVEMENT_SETS) {
-      for (const ach of set.achievements) {
+    for (const achSet of ACHIEVEMENT_SETS) {
+      for (const ach of achSet.achievements) {
         const prog = progress.get(ach.id);
         if (prog?.complete && !claimedAchievements.has(ach.id)) {
-          newClaims.push(ach);
+          newClaims.push({ ach, setName: achSet.name });
         }
       }
     }
     if (newClaims.length === 0) return;
 
-    // Award packs randomly among sets the player already has cards from
-    // (fall back to base1 if they somehow have no cards yet)
+    // Award packs in economy mode (fall back to base1 if no sets with cards yet)
     const eligibleIds = setsWithCards.length > 0 ? setsWithCards : ['base1'];
-    let totalPacks = 0;
-    const notifTitle = newClaims[newClaims.length - 1].title;
-    for (const ach of newClaims) {
-      const reward = getAchievementReward(ach);
-      totalPacks += reward;
-      for (let i = 0; i < reward; i++) {
-        const randomSetId = eligibleIds[Math.floor(Math.random() * eligibleIds.length)];
-        awardFreePack(randomSetId);
+    const newToasts = [];
+    for (const { ach, setName } of newClaims) {
+      let packs = 0;
+      if (economyMode) {
+        packs = getAchievementReward(ach);
+        for (let i = 0; i < packs; i++) {
+          const randomSetId = eligibleIds[Math.floor(Math.random() * eligibleIds.length)];
+          awardFreePack(randomSetId);
+        }
+      }
+      // Skip full-set toasts — the set-complete modal already fires for those
+      if (ach.rarity !== null) {
+        newToasts.push({ id: ach.id, title: ach.title, icon: ach.icon, rarity: ach.rarity, setName, packs });
       }
     }
-    setAchRewardNotif({ title: notifTitle, packs: totalPacks });
+
+    if (newToasts.length > 0) setAchToasts((prev) => [...prev, ...newToasts]);
 
     setClaimedAchievements((prev) => {
-      const next = new Set([...prev, ...newClaims.map((a) => a.id)]);
+      const next = new Set([...prev, ...newClaims.map(({ ach }) => ach.id)]);
       try { localStorage.setItem('pkmon_claimed_ach', JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });
@@ -220,8 +235,51 @@ export default function App() {
     try { localStorage.removeItem('pkmon_free_packs'); } catch { /* ignore */ }
     setClaimedAchievements(new Set());
     try { localStorage.removeItem('pkmon_claimed_ach'); } catch { /* ignore */ }
+    try { localStorage.removeItem('pkmon_favourites'); } catch { /* ignore */ }
+    try { localStorage.removeItem('pkmon_showcase'); } catch { /* ignore */ }
+    resetStats();
     prevOwnedPerSet.current = {};
   }, [resetCollection, resetCoins]);
+
+  // ── Developer mode ────────────────────────────────────────────────────────
+  // Hidden panel — toggle with Ctrl+Shift+D
+  const [showDevPanel, setShowDevPanel] = useState(false);
+  const [forcedPack, setForcedPack] = useState(null); // Card[] | null
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        setShowDevPanel((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const devFireToast = useCallback((toast) => {
+    const packs = economyMode ? getAchievementReward({ rarity: toast.rarity }) : 0;
+    setAchToasts((prev) => [
+      ...prev.filter((t) => t.id !== toast.id),
+      { ...toast, id: `__dev-${Date.now()}__`, packs },
+    ]);
+  }, [economyMode]);
+
+  const devFireSetComplete = useCallback(() => {
+    setSetCompleteName(currentSetConfig?.name ?? 'Test Set');
+    setSetCompleteTotal(currentSetCards?.length ?? 102);
+    setSetComplete(true);
+  }, [currentSetConfig, currentSetCards]);
+
+  const devClearAchievements = useCallback(() => {
+    setClaimedAchievements(new Set());
+    try { localStorage.removeItem('pkmon_claimed_ach'); } catch { /* ignore */ }
+  }, []);
+
+  const devAwardFreePacks = useCallback((n) => {
+    const targetSet = selectedSetId ?? 'base1';
+    for (let i = 0; i < n; i++) awardFreePack(targetSet);
+  }, [selectedSetId, awardFreePack]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
@@ -274,6 +332,18 @@ export default function App() {
             Achievements
           </button>
           <button
+            className={`nav-btn${view === 'showcase' ? ' nav-btn--active' : ''}`}
+            onClick={() => setView('showcase')}
+          >
+            Showcase
+          </button>
+          <button
+            className={`nav-btn${view === 'stats' ? ' nav-btn--active' : ''}`}
+            onClick={() => setView('stats')}
+          >
+            Stats
+          </button>
+          <button
             className="nav-btn nav-btn--icon"
             onClick={() => setShowSettings(true)}
             aria-label="Settings"
@@ -323,6 +393,7 @@ export default function App() {
             {!setLoading && !setError && currentSetCards && (
               <PackOpener
                 key={selectedSetId}
+                setId={selectedSetId}
                 cards={currentSetCards}
                 setName={currentSetConfig?.name ?? ''}
                 onCardsAdded={addCards}
@@ -344,6 +415,8 @@ export default function App() {
                 onCoinFlip={() => setShowCoinFlip(true)}
                 freePacks={freePacks[selectedSetId] ?? 0}
                 onUseFreePack={() => consumeFreePack(selectedSetId)}
+                forcedPack={forcedPack}
+                onPackUsed={() => setForcedPack(null)}
               />
             )}
           </>
@@ -371,6 +444,14 @@ export default function App() {
             economyMode={economyMode}
           />
         )}
+
+        {view === 'showcase' && (
+          <Showcase collection={collection} />
+        )}
+
+        {view === 'stats' && (
+          <Stats loadedSets={loadedSets} />
+        )}
       </main>
     </div>
     {showSettings && <Settings onClose={() => setShowSettings(false)} mode={mode} onModeChange={handleModeChange} onResetProgress={resetProgress} />}
@@ -393,19 +474,30 @@ export default function App() {
         </div>
       </div>
     )}
-    {achRewardNotif && (
-      <div className="ach-reward-overlay" onClick={() => setAchRewardNotif(null)}>
-        <div className="ach-reward-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="ach-reward-icon">🏆</div>
-          <h2 className="ach-reward-title">Achievement Complete!</h2>
-          <p className="ach-reward-name">{achRewardNotif.title}</p>
-          <p className="ach-reward-packs">
-            🎁 +{achRewardNotif.packs} free pack{achRewardNotif.packs !== 1 ? 's' : ''} awarded!
-          </p>
-          <p className="ach-reward-hint">Check your pack opener — free packs are waiting.</p>
-          <button className="ach-reward-btn" onClick={() => setAchRewardNotif(null)}>Claim</button>
-        </div>
+    {achToasts.length > 0 && (
+      <div className={`ach-toast-stack${showDevPanel ? ' ach-toast-stack--dev' : ''}`}>
+        {achToasts.map((toast) => (
+          <AchToast
+            key={toast.id}
+            {...toast}
+            onDismiss={() => dismissAchToast(toast.id)}
+          />
+        ))}
       </div>
+    )}
+    {showDevPanel && (
+      <DevPanel
+        onClose={() => setShowDevPanel(false)}
+        onFireToast={devFireToast}
+        onFireSetComplete={devFireSetComplete}
+        forcedPack={forcedPack}
+        onSetForcedPack={setForcedPack}
+        onClearForcedPack={() => setForcedPack(null)}
+        currentSetCards={currentSetCards}
+        currentSetName={currentSetConfig?.name}
+        onClearAchievements={devClearAchievements}
+        onAwardFreePacks={devAwardFreePacks}
+      />
     )}
     </>
   );

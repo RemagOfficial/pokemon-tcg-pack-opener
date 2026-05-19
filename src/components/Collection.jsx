@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import PokemonCard from './PokemonCard.jsx';
 import CardModal from './CardModal.jsx';
 import { SETS } from '../services/sets.js';
+import { getFavourites } from '../services/favourites.js';
 import './Collection.css';
 import './SetSelector.css';
 
@@ -52,29 +53,41 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
   const [viewMode, setViewMode] = useState('collection');
   const [modalCard, setModalCard] = useState(null);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(false);
+  const [favouriteIds, setFavouriteIds] = useState(() => getFavourites());
+  const refreshFavourites = useCallback(() => setFavouriteIds(getFavourites()), []);
 
   const ownedIds = useMemo(() => new Set(collection.map((c) => c.id)), [collection]);
 
-  // Cards owned in the active set
+  const isFavouritesView = activeSetId === '__favourites__';
+
+  // Cards owned in the active set (for non-favourites views)
   const setCards = useMemo(
-    () => collection.filter((c) => (c.setId ?? 'base1') === activeSetId),
-    [collection, activeSetId],
+    () => isFavouritesView ? [] : collection.filter((c) => (c.setId ?? 'base1') === activeSetId),
+    [collection, activeSetId, isFavouritesView],
   );
+
+  // For Favourites view: show only owned cards that are favourited
+  const activeFavCards = useMemo(
+    () => isFavouritesView ? collection.filter((c) => favouriteIds.has(c.id)) : [],
+    [isFavouritesView, collection, favouriteIds],
+  );
+
+  const activeSetCards = isFavouritesView ? activeFavCards : setCards;
 
   // Filtered + sorted cards for My Cards view
   const displayed = useMemo(() => {
     let base;
-    if (filter === 'All')  base = setCards;
-    else if (filter === 'Holo') base = setCards.filter((c) => c.holo === true || c.reverseHolo === true);
-    else if (filter === 'EX')   base = setCards.filter((c) => c.rarity === 'Rare ex');
-    else base = setCards.filter((c) => c.rarity === filter);
+    if (filter === 'All')  base = activeSetCards;
+    else if (filter === 'Holo') base = activeSetCards.filter((c) => c.holo === true || c.reverseHolo === true);
+    else if (filter === 'EX')   base = activeSetCards.filter((c) => c.rarity === 'Rare ex');
+    else base = activeSetCards.filter((c) => c.rarity === filter);
     return [...base].sort((a, b) => {
       if (sortBy === 'count') {
         return (b.count ?? 1) - (a.count ?? 1) || sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
       }
       return sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
     });
-  }, [setCards, filter, sortBy]);
+  }, [activeSetCards, filter, sortBy]);
 
   // Full checklist cards for active set
   const checklistCards = useMemo(() => {
@@ -171,6 +184,29 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
           </div>
 
           <div className="coll-set-list">
+            {/* ── Favourites virtual set ── */}
+            {favouriteIds.size > 0 && (
+              <button
+                className="coll-set-card coll-set-card--favourites"
+                style={{ '--accent': '#f43f5e' }}
+                onClick={() => { setActiveSetId('__favourites__'); setFilter('All'); setViewMode('collection'); }}
+              >
+                <div className="coll-set-card__symbol-wrap">
+                  <span className="coll-set-card__symbol">&#x2665;</span>
+                </div>
+                <div className="coll-set-card__body">
+                  <span className="coll-set-card__name">Favourites</span>
+                  <span className="coll-set-card__year">Your favourited cards</span>
+                  <div className="coll-set-card__bar">
+                    <div className="coll-set-card__bar-fill" style={{ width: '100%', background: '#f43f5e' }} />
+                  </div>
+                </div>
+                <div className="coll-set-card__meta">
+                  <span className="coll-set-card__count">{favouriteIds.size} card{favouriteIds.size !== 1 ? 's' : ''}</span>
+                </div>
+                <span className="coll-set-card__arrow">›</span>
+              </button>
+            )}
             {visibleSets.map((set) => {
               const owned = ownedOfficialBySet[set.id] ?? 0;
               const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare').length) ?? set.totalCards;
@@ -213,19 +249,19 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
             })}
           </div>
         </div>
-        {modalCard && <CardModal card={modalCard} onClose={() => setModalCard(null)} />}
+        {modalCard && <CardModal card={modalCard} onClose={() => setModalCard(null)} onFavouriteChange={refreshFavourites} />}
       </>
     );
   }
 
   // ── SET DETAIL VIEW ──────────────────────────────────────────────────────
-  const setConfig = SETS.find((s) => s.id === activeSetId);
+  const setConfig = isFavouritesView ? null : SETS.find((s) => s.id === activeSetId);
   // Exclude secret rares from the official total and completion count
   const setSize = checklistCards
     ? checklistCards.filter((c) => c.rarity !== 'Secret Rare').length
     : setConfig?.totalCards ?? 0;
-  const officialSetCards = setCards.filter((c) => c.rarity !== 'Secret Rare');
-  const totalCards = setCards.reduce((sum, c) => sum + (c.count ?? 1), 0);
+  const officialSetCards = activeSetCards.filter((c) => c.rarity !== 'Secret Rare');
+  const totalCards = activeSetCards.reduce((sum, c) => sum + (c.count ?? 1), 0);
 
   return (
     <>
@@ -238,7 +274,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
           <div className="collection__stats">
             {viewMode === 'collection' ? (
               <>
-                <span><strong>{setCards.length}</strong><em> unique</em></span>
+                <span><strong>{activeSetCards.length}</strong><em> unique</em></span>
                 <span className="collection__divider">·</span>
                 <span><strong>{totalCards}</strong><em> total</em></span>
               </>
@@ -254,7 +290,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
             >
               My Cards
             </button>
-            <button
+            {!isFavouritesView && (<button
               className={`view-toggle-btn${viewMode === 'checklist' ? ' view-toggle-btn--active' : ''}`}
               onClick={() => {
                 if (checklistCards) {
@@ -267,7 +303,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
               }}
             >
               {isLoadingChecklist ? 'Loading…' : 'Full Set'}
-            </button>
+            </button>)}
           </div>
         </div>
 
@@ -286,10 +322,10 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                     {r !== 'All' && (
                       <span className="filter-tab__count">
                         {r === 'Holo'
-                          ? setCards.filter((c) => c.holo === true || c.reverseHolo === true).length
+                          ? activeSetCards.filter((c) => c.holo === true || c.reverseHolo === true).length
                           : r === 'EX'
-                            ? setCards.filter((c) => c.rarity === 'Rare ex').length
-                            : setCards.filter((c) => c.rarity === r).length}
+                            ? activeSetCards.filter((c) => c.rarity === 'Rare ex').length
+                            : activeSetCards.filter((c) => c.rarity === r).length}
                       </span>
                     )}
                   </button>
@@ -310,18 +346,18 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                 </button>
               </div>
             </div>
-            {economyMode && setCards.some((c) => (c.count ?? 1) > 1) && (
+            {economyMode && !isFavouritesView && activeSetCards.some((c) => (c.count ?? 1) > 1) && (
               <div className="collection__sell-all-row">
                 <button
                   className="btn-coll-sell-all"
                   onClick={() => {
-                    for (const card of setCards) {
+                    for (const card of activeSetCards) {
                       const dupes = (card.count ?? 1) - 1;
                       for (let i = 0; i < dupes; i++) onSellCard?.(card);
                     }
                   }}
                 >
-                  Sell All Duplicates ({setCards.reduce((sum, c) => sum + Math.max((c.count ?? 1) - 1, 0), 0)})
+                  Sell All Duplicates ({activeSetCards.reduce((sum, c) => sum + Math.max((c.count ?? 1) - 1, 0), 0)})
                 </button>
               </div>
             )}
@@ -331,11 +367,11 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
 
       {/* ── Grid ── */}
       {viewMode === 'collection' ? (
-        setCards.length === 0 ? (
+        activeSetCards.length === 0 ? (
           <div className="collection__empty-inner">
-            <div className="collection__empty-icon">🃏</div>
-            <h2>No {setConfig?.name} cards yet</h2>
-            <p>Open a pack to start collecting!</p>
+            <div className="collection__empty-icon">{isFavouritesView ? '♥' : '🃏'}</div>
+            <h2>{isFavouritesView ? 'No favourites yet' : `No ${setConfig?.name} cards yet`}</h2>
+            <p>{isFavouritesView ? 'Open a card and tap ♡ to favourite it.' : 'Open a pack to start collecting!'}</p>
           </div>
         ) : displayed.length === 0 ? (
           <p className="collection__none">No {filter} cards yet.</p>
@@ -345,6 +381,9 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
               <div key={card.id} className="collection__card-wrap">
                 <div className="collection__card-inner">
                   <PokemonCard card={card} size="normal" showCount={true} onClick={setModalCard} />
+                  {favouriteIds.has(card.id) && (
+                    <span className="coll-fav-badge" aria-label="Favourited">♥</span>
+                  )}
                   {economyMode && (card.count ?? 1) > 1 && (
                     <button
                       className="btn-sell-card btn-sell-card--coll"
@@ -400,7 +439,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
     </div>
 
     {modalCard && (
-      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
+      <CardModal card={modalCard} onClose={() => setModalCard(null)} onFavouriteChange={refreshFavourites} />
     )}
     </>
   );

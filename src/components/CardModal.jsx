@@ -1,5 +1,6 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { getCardImageUrl } from '../services/tcgdex.js';
+import { isFavourited, toggleFavourite } from '../services/favourites.js';
 import './CardModal.css';
 
 const RARITY_COLOR = {
@@ -13,10 +14,17 @@ const RARITY_COLOR = {
 const TILT_MAX = 34;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-export default function CardModal({ card, onClose }) {
+export default function CardModal({ card, onClose, onFavouriteChange }) {
   const imageWrapRef = useRef(null);
+  const [favourited, setFavourited] = useState(() => card ? isFavourited(card.id) : false);
   // Track whether gyroscope is actively driving tilt so touch can act as fallback
   const gyroActiveRef = useRef(false);
+
+  const handleFavourite = useCallback(() => {
+    const nowFav = toggleFavourite(card.id);
+    setFavourited(nowFav);
+    onFavouriteChange?.();
+  }, [card, onFavouriteChange]);
 
   const applyTilt = (rx, ry) => {
     const el = imageWrapRef.current;
@@ -109,6 +117,14 @@ export default function CardModal({ card, onClose }) {
       >
         <button className="card-modal-close" onClick={onClose} aria-label="Close">
           ✕
+        </button>
+        <button
+          className={`card-modal-fav${favourited ? ' card-modal-fav--on' : ''}`}
+          onClick={handleFavourite}
+          aria-label={favourited ? 'Remove from favourites' : 'Add to favourites'}
+          title={favourited ? 'Remove from favourites' : 'Add to favourites'}
+        >
+          {favourited ? '♥' : '♡'}
         </button>
 
         <div

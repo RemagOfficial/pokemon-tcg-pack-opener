@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { openPack } from '../services/packLogic.js';
+import { recordPackOpened } from '../services/stats.js';
 import { getCardImageUrl } from '../services/tcgdex.js';
 import CardModal from './CardModal.jsx';
 import PokemonCard from './PokemonCard.jsx';
@@ -35,12 +36,14 @@ function PackGraphic({ state, setName }) {
 //
 // cardState (during revealing): facedown → flipping → faceup → hiding
 export default function PackOpener({
-  cards, setName, onCardsAdded, collection, onChangeSet,
+  cards, setName, setId, onCardsAdded, collection, onChangeSet,
   // Economy mode props
   economyMode = false, coins = 0, packPrice = 100,
   onBuyPack, onSellCard, getCardSellPrice,
   canCoinFlip = false, onCoinFlip,
   freePacks = 0, onUseFreePack,
+  // Dev mode
+  forcedPack = null, onPackUsed,
 }) {
   const [phase,        setPhase]        = useState('idle');
   const [packCards,    setPackCards]    = useState([]);
@@ -91,6 +94,13 @@ export default function PackOpener({
     return () => clearTimeout(holoRevealTimerRef.current);
   }, [cardState]);
 
+  // Secret Rare: longer shake-buildup (1.8 s) before the flip
+  useEffect(() => {
+    if (cardState !== 'secretReveal') return;
+    holoRevealTimerRef.current = setTimeout(() => setCardState('faceup'), 1800);
+    return () => clearTimeout(holoRevealTimerRef.current);
+  }, [cardState]);
+
   // When dismiss animation ends, advance to the next card (or summary)
   useEffect(() => {
     if (cardState !== 'hiding') return;
@@ -123,8 +133,10 @@ export default function PackOpener({
     setSoldIndices(new Set());
     clearTimers();
     preOpenCollectionRef.current = new Set(collectionRef.current.map((c) => c.id));
-    const drawn = openPack(cards);
+    const drawn = forcedPack ?? openPack(cards);
+    if (forcedPack) onPackUsed?.();
     packCardsRef.current = drawn;
+    if (setId) recordPackOpened(setId, drawn);
     setPackCards(drawn);
     setCurrentIndex(0);
     setCardState('facedown');
@@ -140,7 +152,8 @@ export default function PackOpener({
 
   const currentCard    = packCards[currentIndex];
   const isLastCard     = currentIndex === packCards.length - 1;
-  const isHolo         = isLastCard && (currentCard?.holo === true || currentCard?.rarity === 'Secret Rare');
+  const isSecretRare   = isLastCard && currentCard?.rarity === 'Secret Rare';
+  const isHolo         = isLastCard && currentCard?.holo === true && !isSecretRare;
   const isNewCard      = currentCard != null && !preOpenCollectionRef.current.has(currentCard.id);
 
   const handleCardClick = useCallback(() => {
@@ -150,8 +163,8 @@ export default function PackOpener({
       return;
     }
 
-    // Click during holo buildup: skip straight to the flip
-    if (cardState === 'holoReveal') {
+    // Click during any buildup: skip straight to the flip
+    if (cardState === 'holoReveal' || cardState === 'secretReveal') {
       clearTimeout(holoRevealTimerRef.current);
       setCardState('faceup');
       return;
@@ -159,13 +172,15 @@ export default function PackOpener({
 
     if (cardState !== 'facedown') return;
 
-    // Holo rares trigger the dramatic buildup first
-    if (isHolo) {
+    // Secret Rare gets the most dramatic buildup, then holo, then instant
+    if (isSecretRare) {
+      setCardState('secretReveal');
+    } else if (isHolo) {
       setCardState('holoReveal');
     } else {
       setCardState('faceup');
     }
-  }, [cardState, isHolo]);
+  }, [cardState, isHolo, isSecretRare]);
 
   const handleReset = useCallback(() => {
     clearTimers();
@@ -180,6 +195,7 @@ export default function PackOpener({
 
   const remaining      = packCards.length - currentIndex;
   const isHoloReveal   = cardState === 'holoReveal';
+  const isSecretReveal = cardState === 'secretReveal';
   const isFlipped      = cardState === 'faceup' || cardState === 'hiding';
   const isHiding       = cardState === 'hiding';
 
@@ -255,7 +271,9 @@ export default function PackOpener({
           {/* Card stack */}
           <div className="card-stack-wrapper">
             {/* God rays burst for holo rare reveal */}
-            {isHolo && (isHoloReveal || isFlipped) && <div className="stack-holo-rays" />}
+            {(isHolo || isSecretRare) && (isHoloReveal || isSecretReveal || isFlipped) && (
+              <div className={`stack-holo-rays${isSecretRare ? ' stack-holo-rays--secret' : ''}`} />
+            )}
             {/* Ghost layers for depth */}
             {remaining > 2 && <div className="stack-ghost stack-ghost--2"><img src={cardBackImg} alt="" draggable={false} /></div>}
             {remaining > 1 && <div className="stack-ghost stack-ghost--1"><img src={cardBackImg} alt="" draggable={false} /></div>}
@@ -265,10 +283,12 @@ export default function PackOpener({
               key={currentIndex}
               className={[
                 'stack-flip',
-                isFlipped     ? 'stack-flip--flipped'    : '',
-                isHiding      ? 'stack-flip--hiding'     : '',
-                isHoloReveal  ? 'stack-flip--holo-event' : '',
-                isHolo && isFlipped ? 'stack-flip--holo' : '',
+                isFlipped      ? 'stack-flip--flipped'      : '',
+                isHiding       ? 'stack-flip--hiding'        : '',
+                isHoloReveal   ? 'stack-flip--holo-event'    : '',
+                isSecretReveal ? 'stack-flip--secret-event'  : '',
+                isHolo && isFlipped    ? 'stack-flip--holo'   : '',
+                isSecretRare           ? 'stack-flip--secret' : '',
               ].join(' ')}
               onClick={handleCardClick}
               title={!isFlipped ? 'Click to reveal' : undefined}
@@ -280,7 +300,7 @@ export default function PackOpener({
                   alt={currentCard.name}
                   draggable="false"
                 />
-                {isHolo && <div className="stack-holo" />}
+                {(isHolo || isSecretRare) && <div className="stack-holo" />}
                 {isNewCard && isFlipped && <div className="new-badge">NEW</div>}
                 <div className={`stack-rarity rarity--${currentCard.rarity.replace(/\s+/g, '-').toLowerCase()}`}>
                   {currentCard.rarity === 'Rare Holo'
@@ -307,8 +327,10 @@ export default function PackOpener({
                 </p>
               </>
             ) : (
-              <p className={`reveal-prompt${isHoloReveal ? ' reveal-prompt--holo' : ''}`}>
-                {isHoloReveal
+              <p className={`reveal-prompt${isHoloReveal ? ' reveal-prompt--holo' : ''}${isSecretReveal ? ' reveal-prompt--secret' : ''}`}>
+                {isSecretReveal
+                  ? '✦ Secret Rare!!'
+                  : isHoloReveal
                   ? '✦ Rare Holo!'
                   : remaining > 1
                   ? `Click to reveal · ${remaining} remaining`

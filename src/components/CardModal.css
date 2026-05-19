@@ -55,6 +55,41 @@
   color: #e2e8f0;
 }
 
+.card-modal-fav {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  z-index: 2;
+  line-height: 1;
+}
+
+.card-modal-fav:hover {
+  background: #334155;
+  color: #f43f5e;
+  transform: scale(1.1);
+}
+
+.card-modal-fav--on {
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.4);
+}
+
+.card-modal-fav--on:hover {
+  color: #fb7185;
+}
+
 /* ── Image ─────────────────────────────────────────────────── */
 .card-modal-image-wrap {
   position: relative;
