@@ -755,6 +755,143 @@ export const ACHIEVEMENT_SETS = [
       { id: 'dp7-full',     title: 'True Stormfront Master', description: 'Own every card and every Reverse Holo in Stormfront',     icon: '◈', rarity: 'all-variants',  fallbackTotal: 100, filter: (c) => c },
     ],
   },
+  {
+    id: 'pl1',
+    tcgdexId: 'pl1',
+    name: 'Platinum',
+    year: '2009',
+    achievements: [
+      { id: 'pl1-common',   title: 'Platinum Basics',        description: 'Collect all Common cards',                          icon: '○', rarity: 'Common',     fallbackTotal: 57,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'pl1-uncommon', title: 'Platinum Support',       description: 'Collect all Uncommon cards',                        icon: '◇', rarity: 'Uncommon',   fallbackTotal: 31,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'pl1-rare',     title: 'Platinum Rares',         description: 'Collect all Rare cards',                            icon: '★', rarity: 'Rare',       fallbackTotal: 21,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'pl1-holo',     title: 'Platinum Shine',         description: 'Collect all Rare Holo cards',                       icon: '✦', rarity: 'Rare Holo',  fallbackTotal: 17,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'pl1-lvx',      title: 'Platinum LV.X',          description: 'Collect all LV.X cards',                            icon: '◉', rarity: 'Rare LV.X',  fallbackTotal: 7,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'pl1-complete', title: 'Platinum Master',        description: 'Own at least one print of every card in Platinum',  icon: '◆', rarity: null,         fallbackTotal: 133, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'pl1-full',     title: 'True Platinum Master',   description: 'Own every card and every Reverse Holo in Platinum', icon: '◈', rarity: 'all-variants', fallbackTotal: 133, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'pl2',
+    tcgdexId: 'pl2',
+    name: 'Rising Rivals',
+    year: '2009',
+    achievements: [
+      { id: 'pl2-common',   title: 'Rival Basics',              description: 'Collect all Common cards',                                  icon: '○', rarity: 'Common',    fallbackTotal: 45,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'pl2-uncommon', title: 'Rival Support',             description: 'Collect all Uncommon cards',                                icon: '◇', rarity: 'Uncommon',  fallbackTotal: 26,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'pl2-rare',     title: 'Rival Rares',               description: 'Collect all Rare cards',                                    icon: '★', rarity: 'Rare',      fallbackTotal: 16,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'pl2-holo',     title: 'Rival Shine',               description: 'Collect all Rare Holo cards',                               icon: '✦', rarity: 'Rare Holo', fallbackTotal: 16,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'pl2-lvx',      title: 'Rival LV.X',                description: 'Collect all LV.X cards',                                    icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 8,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'pl2-rotom',    title: 'Rotom Collector',           description: 'Collect all Rotom cards (RT card numbers)',                 icon: '⚡', rarity: 'Rare',      fallbackTotal: 4,   anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('RT') && !x.reverseHolo) },
+      { id: 'pl2-complete', title: 'Rising Rivals Master',      description: 'Own at least one print of every card in Rising Rivals',    icon: '◆', rarity: null,        fallbackTotal: 111, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'pl2-full',     title: 'True Rising Rivals Master', description: 'Own every card and every Reverse Holo in Rising Rivals',   icon: '◈', rarity: 'all-variants', fallbackTotal: 111, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'pl3',
+    tcgdexId: 'pl3',
+    name: 'Supreme Victors',
+    year: '2009',
+    achievements: [
+      { id: 'pl3-common',   title: 'Supreme Basics',              description: 'Collect all Common cards',                                    icon: '○', rarity: 'Common',    fallbackTotal: 56,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'pl3-uncommon', title: 'Supreme Support',             description: 'Collect all Uncommon cards',                                  icon: '◇', rarity: 'Uncommon',  fallbackTotal: 38,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'pl3-rare',     title: 'Supreme Rares',               description: 'Collect all Rare cards',                                      icon: '★', rarity: 'Rare',      fallbackTotal: 26,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'pl3-holo',     title: 'Supreme Shine',               description: 'Collect all Rare Holo cards',                                 icon: '✦', rarity: 'Rare Holo', fallbackTotal: 22,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'pl3-lvx',      title: 'Supreme LV.X',                description: 'Collect all LV.X cards',                                      icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 5,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'pl3-complete', title: 'Supreme Victors Master',      description: 'Own at least one print of every card in Supreme Victors',    icon: '◆', rarity: null,        fallbackTotal: 147, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'pl3-full',     title: 'True Supreme Victors Master', description: 'Own every card and every Reverse Holo in Supreme Victors',   icon: '◈', rarity: 'all-variants', fallbackTotal: 147, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'pl4',
+    tcgdexId: 'pl4',
+    name: 'Arceus',
+    year: '2009',
+    achievements: [
+      { id: 'pl4-common',   title: 'Alpha Basics',           description: 'Collect all Common cards',                           icon: '○', rarity: 'Common',    fallbackTotal: 36,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'pl4-uncommon', title: 'Alpha Support',          description: 'Collect all Uncommon cards',                         icon: '◇', rarity: 'Uncommon',  fallbackTotal: 26,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'pl4-rare',     title: 'Alpha Rares',            description: 'Collect all Rare cards',                             icon: '★', rarity: 'Rare',      fallbackTotal: 16,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'pl4-holo',     title: 'Alpha Shine',            description: 'Collect all Rare Holo cards',                        icon: '✦', rarity: 'Rare Holo', fallbackTotal: 15,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'pl4-lvx',      title: 'Alpha LV.X',             description: 'Collect all LV.X cards',                             icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 6,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'pl4-arceus',   title: 'Arceus Collector',       description: 'Collect all Arceus cards (AR card numbers)',         icon: '✧', rarity: 'Rare',      fallbackTotal: 9,   anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('AR') && !x.reverseHolo) },
+      { id: 'pl4-complete', title: 'Arceus Set Master',      description: 'Own at least one print of every card in Arceus',     icon: '◆', rarity: null,        fallbackTotal: 99,  anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'pl4-full',     title: 'True Arceus Set Master', description: 'Own every card and every Reverse Holo in Arceus',    icon: '◈', rarity: 'all-variants', fallbackTotal: 99, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'hgss1',
+    tcgdexId: 'hgss1',
+    name: 'HeartGold & SoulSilver',
+    year: '2010',
+    achievements: [
+      { id: 'hgss1-common',   title: 'Johto Basics',             description: 'Collect all Common cards',                                               icon: '○', rarity: 'Common',      fallbackTotal: 59,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'hgss1-uncommon', title: 'Johto Support',            description: 'Collect all Uncommon cards',                                             icon: '◇', rarity: 'Uncommon',    fallbackTotal: 30,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'hgss1-rare',     title: 'Johto Rares',              description: 'Collect all Rare cards',                                                 icon: '★', rarity: 'Rare',        fallbackTotal: 20,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'hgss1-holo',     title: 'Johto Shine',              description: 'Collect all Rare Holo cards',                                            icon: '✦', rarity: 'Rare Holo',   fallbackTotal: 14,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'hgss1-alpha',    title: 'Alph Archive I',           description: 'Collect the Alph Lithograph card (ONE)',                                 icon: '☷', rarity: 'Secret Rare', fallbackTotal: 1,   anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('ONE') && !x.reverseHolo) },
+      { id: 'hgss1-complete', title: 'HeartGold & SoulSilver Master', description: 'Own at least one print of every card in HeartGold & SoulSilver',     icon: '◆', rarity: null,          fallbackTotal: 124, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'hgss1-full',     title: 'True HeartGold & SoulSilver Master', description: 'Own every card and every Reverse Holo in HeartGold & SoulSilver', icon: '◈', rarity: 'all-variants', fallbackTotal: 124, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'hgss2',
+    tcgdexId: 'hgss2',
+    name: 'Unleashed',
+    year: '2010',
+    achievements: [
+      { id: 'hgss2-common',   title: 'Unleashed Basics',       description: 'Collect all Common cards',                                  icon: '○', rarity: 'Common',      fallbackTotal: 43, filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'hgss2-uncommon', title: 'Unleashed Support',      description: 'Collect all Uncommon cards',                                icon: '◇', rarity: 'Uncommon',    fallbackTotal: 26, filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'hgss2-rare',     title: 'Unleashed Rares',        description: 'Collect all Rare cards',                                    icon: '★', rarity: 'Rare',        fallbackTotal: 14, filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'hgss2-holo',     title: 'Unleashed Shine',        description: 'Collect all Rare Holo cards',                               icon: '✦', rarity: 'Rare Holo',   fallbackTotal: 12, filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'hgss2-alpha',    title: 'Alph Archive II',        description: 'Collect the Alph Lithograph card (TWO)',                    icon: '☷', rarity: 'Secret Rare', fallbackTotal: 1,  anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('TWO') && !x.reverseHolo) },
+      { id: 'hgss2-complete', title: 'Unleashed Master',       description: 'Own at least one print of every card in Unleashed',         icon: '◆', rarity: null,          fallbackTotal: 96, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'hgss2-full',     title: 'True Unleashed Master',  description: 'Own every card and every Reverse Holo in Unleashed',         icon: '◈', rarity: 'all-variants', fallbackTotal: 96, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'hgss3',
+    tcgdexId: 'hgss3',
+    name: 'Undaunted',
+    year: '2010',
+    achievements: [
+      { id: 'hgss3-common',   title: 'Undaunted Basics',       description: 'Collect all Common cards',                                  icon: '○', rarity: 'Common',      fallbackTotal: 41, filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'hgss3-uncommon', title: 'Undaunted Support',      description: 'Collect all Uncommon cards',                                icon: '◇', rarity: 'Uncommon',    fallbackTotal: 25, filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'hgss3-rare',     title: 'Undaunted Rares',        description: 'Collect all Rare cards',                                    icon: '★', rarity: 'Rare',        fallbackTotal: 13, filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'hgss3-holo',     title: 'Undaunted Shine',        description: 'Collect all Rare Holo cards',                               icon: '✦', rarity: 'Rare Holo',   fallbackTotal: 11, filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'hgss3-alpha',    title: 'Alph Archive III',       description: 'Collect the Alph Lithograph card (THREE)',                  icon: '☷', rarity: 'Secret Rare', fallbackTotal: 1,  anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('THREE') && !x.reverseHolo) },
+      { id: 'hgss3-complete', title: 'Undaunted Master',       description: 'Own at least one print of every card in Undaunted',         icon: '◆', rarity: null,          fallbackTotal: 91, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'hgss3-full',     title: 'True Undaunted Master',  description: 'Own every card and every Reverse Holo in Undaunted',         icon: '◈', rarity: 'all-variants', fallbackTotal: 91, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'hgss4',
+    tcgdexId: 'hgss4',
+    name: 'Triumphant',
+    year: '2010',
+    achievements: [
+      { id: 'hgss4-common',   title: 'Triumphant Basics',       description: 'Collect all Common cards',                                  icon: '○', rarity: 'Common',      fallbackTotal: 47,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'hgss4-uncommon', title: 'Triumphant Support',      description: 'Collect all Uncommon cards',                                icon: '◇', rarity: 'Uncommon',    fallbackTotal: 27,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'hgss4-rare',     title: 'Triumphant Rares',        description: 'Collect all Rare cards',                                    icon: '★', rarity: 'Rare',        fallbackTotal: 15,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'hgss4-holo',     title: 'Triumphant Shine',        description: 'Collect all Rare Holo cards',                               icon: '✦', rarity: 'Rare Holo',   fallbackTotal: 13,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'hgss4-alpha',    title: 'Alph Archive IV',         description: 'Collect the Alph Lithograph card (FOUR)',                   icon: '☷', rarity: 'Secret Rare', fallbackTotal: 1,   anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('FOUR') && !x.reverseHolo) },
+      { id: 'hgss4-complete', title: 'Triumphant Master',       description: 'Own at least one print of every card in Triumphant',        icon: '◆', rarity: null,          fallbackTotal: 103, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'hgss4-full',     title: 'True Triumphant Master',  description: 'Own every card and every Reverse Holo in Triumphant',        icon: '◈', rarity: 'all-variants', fallbackTotal: 103, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'col1',
+    tcgdexId: 'col1',
+    name: 'Call of Legends',
+    year: '2011',
+    achievements: [
+      { id: 'col1-common',   title: 'Legend Basics',           description: 'Collect all Common cards',                                   icon: '○', rarity: 'Common',      fallbackTotal: 47,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'col1-uncommon', title: 'Legend Support',          description: 'Collect all Uncommon cards',                                 icon: '◇', rarity: 'Uncommon',    fallbackTotal: 26,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'col1-rare',     title: 'Legend Rares',            description: 'Collect all Rare cards',                                     icon: '★', rarity: 'Rare',        fallbackTotal: 11,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'col1-holo',     title: 'Legend Shine',            description: 'Collect all Rare Holo cards',                                icon: '✦', rarity: 'Rare Holo',   fallbackTotal: 11,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'col1-sl',       title: 'Shiny Legends',           description: 'Collect all shiny legendary cards (SL1-SL11)',               icon: '✧', rarity: 'Secret Rare', fallbackTotal: 11,  anyVariant: true, filter: (c) => c.filter((x) => String(x.localId).startsWith('SL') && !x.reverseHolo) },
+      { id: 'col1-complete', title: 'Call of Legends Master',  description: 'Own at least one print of every card in Call of Legends',    icon: '◆', rarity: null,          fallbackTotal: 106, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'col1-full',     title: 'True Call of Legends Master', description: 'Own every card and every Reverse Holo in Call of Legends', icon: '◈', rarity: 'all-variants', fallbackTotal: 106, filter: (c) => c },
+    ],
+  },
 ];
 
 /**
@@ -765,6 +902,7 @@ export function getAchievementReward(ach) {
   if (ach.rarity === 'all-variants') return 25; // every card + every reverse holo
   if (ach.rarity === null)           return 15; // full set (any variant)
   if (ach.rarity === 'Rare Shiny')   return 15; // shiny sub-set (ultra rare)
+  if (ach.rarity === 'Secret Rare')  return 12; // secret rare subset
   if (ach.rarity === 'Rare ex')      return 12; // EX Pokemon
   if (ach.rarity === 'Rare LV.X')    return 12; // LV.X Pokemon
   if (ach.rarity === 'Rare Holo')    return 10;

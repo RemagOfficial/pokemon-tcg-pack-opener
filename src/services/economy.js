@@ -19,6 +19,9 @@ export const SET_ORDER = [
   'ex12',  'ex13',  'ex14',  'ex15',  'ex16',
   'dp1',
   'dp2', 'dp3', 'dp4', 'dp5', 'dp6', 'dp7',
+  'pl1', 'pl2', 'pl3', 'pl4',
+  'hgss1', 'hgss2', 'hgss3', 'hgss4',
+  'col1',
 ];
 
 // Build the price table once at module load

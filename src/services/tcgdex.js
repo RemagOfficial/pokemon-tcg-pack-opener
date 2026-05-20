@@ -152,6 +152,16 @@ export async function loadSetCards(setId) {
       rarity = 'Secret Rare';
     }
 
+    // Explicit non-numeric rarity mappings (e.g. HGSS Alph Lithograph ONE/TWO/THREE/FOUR).
+    if (setConfig?.rarityPrefixMap) {
+      for (const [prefix, mappedRarity] of Object.entries(setConfig.rarityPrefixMap)) {
+        if (String(card.localId).startsWith(prefix)) {
+          rarity = mappedRarity;
+          break;
+        }
+      }
+    }
+
     // Stormfront Shiny cards (localId 'SH1', 'SH2', etc.) share TCGdex rarity
     // "Rare Holo LV.X" with actual LV.X cards but are a distinct rarity tier.
     if (/^SH\d/i.test(card.localId)) rarity = 'Rare Shiny';
@@ -246,6 +256,14 @@ export async function loadSetCards(setId) {
           const numericId = parseInt(card.localId, 10);
           if (!isNaN(numericId) && setConfig?.totalCards && numericId > setConfig.totalCards) {
             rarity = 'Secret Rare';
+          }
+          if (setConfig?.rarityPrefixMap) {
+            for (const [prefix, mappedRarity] of Object.entries(setConfig.rarityPrefixMap)) {
+              if (String(card.localId).startsWith(prefix)) {
+                rarity = mappedRarity;
+                break;
+              }
+            }
           }
           const isHolo = vd !== null ? vd.holo === true : false;
           return { ...card, rarity, holo: isHolo, types: vd?.types ?? null };

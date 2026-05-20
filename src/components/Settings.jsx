@@ -3,6 +3,15 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.10.0',
+    date: '2026-05-20',
+    entries: [
+      'Full Platinum series added — Platinum through Arceus (pl1–pl4)',
+      'Full HeartGold & SoulSilver series added — HS Unleashed through Triumphant (hgss1–hgss4)',
+      'Call of Legends added (col1) as an HGSS-era expansion with SL shiny legendary Secret Rares (SL1–SL11)',
+    ],
+  },
+  {
     version: '1.9.0',
     date: '2026-05-20',
     entries: [
