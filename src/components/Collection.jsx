@@ -45,7 +45,16 @@ const sortScore = (card) => {
   return 9;
 };
 
-export default function Collection({ collection, loadedSets = {}, setSymbols = {}, onLoadSet, economyMode = false, onSellCard, getCardSellPrice }) {
+const gradedCount = (card) => {
+  if (card?.graded) {
+    return Object.values(card.graded).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+  }
+  // Legacy fallback: old save format stored a single grade on the whole stack.
+  if (typeof card?.grade === 'number') return card.count ?? 1;
+  return 0;
+};
+
+export default function Collection({ collection, loadedSets = {}, setSymbols = {}, onLoadSet, economyMode = false, onSellCard, onGradeCard, getCardSellPrice }) {
   const [activeSetId, setActiveSetId] = useState(null);
   const [hideComplete, setHideComplete] = useState(false);
   const [filter, setFilter] = useState('All');
@@ -92,6 +101,12 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
 
   const activeSetCards = isFavouritesView ? activeFavCards : setCards;
 
+  useEffect(() => {
+    if (!modalCard) return;
+    const fresh = activeSetCards.find((c) => c.id === modalCard.id);
+    if (fresh && fresh !== modalCard) setModalCard(fresh);
+  }, [modalCard, activeSetCards]);
+
   // Filtered + sorted cards for My Cards view
   const availableTypes = useMemo(() => {
     const typeSet = new Set();
@@ -106,13 +121,57 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
     if (filter === 'All')  base = activeSetCards;
     else if (filter === 'Holo') base = activeSetCards.filter((c) => c.holo === true || c.reverseHolo === true);
     else if (filter === 'EX')   base = activeSetCards.filter((c) => c.rarity === 'Rare ex');
+    else if (filter === 'Graded') {
+      base = activeSetCards.flatMap((c) => {
+        if (!c.graded && typeof c.grade === 'number') {
+          const totalGraded = (c.count ?? 1);
+          const totalUngraded = Math.max(0, (c.count ?? 1) - totalGraded);
+          return [{
+            ...c,
+            id: `${c.id}__graded_${c.grade}`,
+            baseCardId: c.id,
+            grade: Number(c.grade),
+            count: c.count ?? 1,
+            totalGraded,
+            totalUngraded,
+          }];
+        }
+        if (!c.graded) return [];
+        const totalGraded = Object.values(c.graded).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+        const totalUngraded = Math.max(0, (c.count ?? 1) - totalGraded);
+        return Object.entries(c.graded)
+          .filter(([, qty]) => (Number(qty) || 0) > 0)
+          .map(([grade, qty]) => ({
+            ...c,
+            id: `${c.id}__graded_${grade}`,
+            baseCardId: c.id,
+            grade: Number(grade),
+            count: Number(qty),
+            totalGraded,
+            totalUngraded,
+          }));
+      });
+    }
     else base = activeSetCards.filter((c) => c.rarity === filter);
+    
+    // Add totalGraded and totalUngraded to all cards (needed for sell button visibility)
+    if (filter !== 'Graded') {
+      base = base.map((c) => {
+        const totalGraded = Object.values(c.graded ?? {}).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+        const totalUngraded = Math.max(0, (c.count ?? 1) - totalGraded);
+        return { ...c, totalGraded, totalUngraded };
+      });
+    }
+    
     if (filterType !== null) {
       base = base.filter((c) => c.types?.includes(filterType));
     }
     return [...base].sort((a, b) => {
       if (sortBy === 'count') {
         return (b.count ?? 1) - (a.count ?? 1) || sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
+      }
+      if (filter === 'Graded') {
+        return (b.grade ?? 0) - (a.grade ?? 0) || a.name.localeCompare(b.name);
       }
       return sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
     });
@@ -279,7 +338,14 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
             })}
           </div>
         </div>
-        {modalCard && <CardModal card={modalCard} onClose={() => setModalCard(null)} onFavouriteChange={refreshFavourites} />}
+        {modalCard && (
+          <CardModal
+            card={modalCard}
+            onClose={() => setModalCard(null)}
+            onFavouriteChange={refreshFavourites}
+            onGradeCard={onGradeCard}
+          />
+        )}
       </>
     );
   }
@@ -393,6 +459,17 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                     </span>
                   </button>
                 )}
+                {activeSetCards.some((c) => gradedCount(c) > 0) && (
+                  <button
+                    className={`filter-tab${filter === 'Graded' ? ' filter-tab--active' : ''} filter-tab--graded`}
+                    onClick={() => setFilter('Graded')}
+                  >
+                    Graded
+                    <span className="filter-tab__count">
+                      {activeSetCards.reduce((sum, c) => sum + gradedCount(c), 0)}
+                    </span>
+                  </button>
+                )}
               </div>
               <div className="collection__sort-toggle" role="group" aria-label="Sort order">
                 <button
@@ -409,18 +486,37 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                 </button>
               </div>
             </div>
-            {economyMode && !isFavouritesView && activeSetCards.some((c) => (c.count ?? 1) > 1) && (
+            {economyMode && !isFavouritesView && activeSetCards.some((c) => {
+              const totalCount = c.count ?? 1;
+              const totalGraded = gradedCount(c);
+              const totalUngraded = totalCount - totalGraded;
+              const ungraduatedDupes = Math.max(totalUngraded - 1, 0);
+              const gradedDupes = Math.max(totalGraded - 1, 0);
+              return (ungraduatedDupes + gradedDupes) > 0;
+            }) && (
               <div className="collection__sell-all-row">
                 <button
                   className="btn-coll-sell-all"
                   onClick={() => {
                     for (const card of activeSetCards) {
-                      const dupes = (card.count ?? 1) - 1;
-                      for (let i = 0; i < dupes; i++) onSellCard?.(card);
+                      const totalCount = card.count ?? 1;
+                      const totalGraded = gradedCount(card);
+                      const totalUngraded = totalCount - totalGraded;
+                      const ungraduatedDupes = Math.max(totalUngraded - 1, 0);
+                      const gradedDupes = Math.max(totalGraded - 1, 0);
+                      for (let i = 0; i < ungraduatedDupes; i++) onSellCard?.(card);
+                      for (let i = 0; i < gradedDupes; i++) onSellCard?.(card);
                     }
                   }}
                 >
-                  Sell All Duplicates ({activeSetCards.reduce((sum, c) => sum + Math.max((c.count ?? 1) - 1, 0), 0)})
+                  Sell All Duplicates ({activeSetCards.reduce((sum, c) => {
+                    const totalCount = c.count ?? 1;
+                    const totalGraded = gradedCount(c);
+                    const totalUngraded = totalCount - totalGraded;
+                    const ungraduatedDupes = Math.max(totalUngraded - 1, 0);
+                    const gradedDupes = Math.max(totalGraded - 1, 0);
+                    return sum + ungraduatedDupes + gradedDupes;
+                  }, 0)})
                 </button>
               </div>
             )}
@@ -464,20 +560,30 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
             {displayed.map((card) => (
               <div key={card.id} className="collection__card-wrap">
                 <div className="collection__card-inner">
-                  <PokemonCard card={card} size="normal" showCount={true} onClick={setModalCard} />
+                  <PokemonCard
+                    card={card}
+                    size="normal"
+                    showCount={true}
+                    onClick={setModalCard}
+                    showGraded={filter === 'Graded'}
+                  />
                   {favouriteIds.has(card.id) && (
                     <span className="coll-fav-badge" aria-label="Favourited">♥</span>
                   )}
-                  {economyMode && (card.count ?? 1) > 1 && (
-                    <button
-                      className="btn-sell-card btn-sell-card--coll"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSellCard?.(card);
-                      }}
-                    >
-                      🪙 {getCardSellPrice?.(card) ?? 0}
-                    </button>
+                  {economyMode && (
+                    (filter === 'Graded' 
+                      ? (card.totalGraded ?? 1) > 1 || (card.totalUngraded ?? 0) > 0
+                      : (card.count ?? 1) > 1 && (card.totalUngraded ?? 0) > 0) && (
+                      <button
+                        className="btn-sell-card btn-sell-card--coll"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSellCard?.(card);
+                        }}
+                      >
+                        🪙 {getCardSellPrice?.(card) ?? 0}
+                      </button>
+                    )
                   )}
                 </div>
                 <p className="collection__card-name">{card.name}</p>
@@ -509,6 +615,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                   onClick={isOwned ? setModalCard : undefined}
                   unowned={!isOwned && !isSecretRare}
                   secretUnowned={isSecretRare && !isOwned}
+                  showGraded={false}
                 />
                 <p className={`collection__card-name${isOwned ? '' : (isSecretRare ? ' collection__card-name--mystery' : ' collection__card-name--unowned')}`}>
                   {isOwned ? card.name : '???'}
@@ -523,7 +630,12 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
     </div>
 
     {modalCard && (
-      <CardModal card={modalCard} onClose={() => setModalCard(null)} onFavouriteChange={refreshFavourites} />
+      <CardModal
+        card={modalCard}
+        onClose={() => setModalCard(null)}
+        onFavouriteChange={refreshFavourites}
+        onGradeCard={onGradeCard}
+      />
     )}
     </>
   );

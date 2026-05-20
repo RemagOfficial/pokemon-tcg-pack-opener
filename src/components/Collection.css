@@ -176,6 +176,7 @@
 .filter-tab--secret-rare.filter-tab--active   { color: #f43f5e; border-color: #f43f5e; }
 .filter-tab--rare-lvx.filter-tab--active      { color: #38bdf8; border-color: #38bdf8; }
 .filter-tab--rare-shiny.filter-tab--active    { color: #facc15; border-color: #facc15; }
+.filter-tab--graded.filter-tab--active        { color: #e2e8f0; border-color: #e2e8f0; }
 
 .filter-tab--active .filter-tab__count {
   background: currentColor;

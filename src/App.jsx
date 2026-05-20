@@ -90,7 +90,7 @@ export default function App() {
   // Separate collections per mode so economy players can't sell sandbox cards
   const sandboxCol = useCollection('pokemon_collection');
   const economyCol = useCollection('pkmon_eco_collection');
-  const { collection, addCards, sellCard, resetCollection } = economyMode ? economyCol : sandboxCol;
+  const { collection, addCards, sellCard, gradeCard, devSetCardGrade, resetCollection } = economyMode ? economyCol : sandboxCol;
 
   const handleModeChange = useCallback((newMode) => {
     setMode(newMode);
@@ -445,8 +445,8 @@ export default function App() {
                 packPrice={PACK_PRICES[selectedSetId] ?? PACK_PRICES['base1']}
                 onBuyPack={() => spend(PACK_PRICES[selectedSetId] ?? PACK_PRICES['base1'])}
                 onSellCard={(card) => {
-                  sellCard(card.id);
-                  earn(getSellPrice(card, selectedSetId ?? 'base1'));
+                  const sold = sellCard(card.baseCardId ?? card.id, card.grade ? { grade: card.grade } : undefined);
+                  if (sold) earn(getSellPrice(card, selectedSetId ?? 'base1'));
                 }}
                 getCardSellPrice={(card) => getSellPrice(card, selectedSetId ?? 'base1')}
                 canCoinFlip={canCoinFlip}
@@ -469,9 +469,10 @@ export default function App() {
             setSymbols={setSymbols}
             onLoadSet={loadSet}
             economyMode={economyMode}
+            onGradeCard={(card, forcedGrade) => gradeCard(card.baseCardId ?? card.id, forcedGrade)}
             onSellCard={(card) => {
-              sellCard(card.id);
-              earn(getSellPrice(card, card.setId ?? 'base1'));
+              const sold = sellCard(card.baseCardId ?? card.id, card.grade ? { grade: card.grade } : undefined);
+              if (sold) earn(getSellPrice(card, card.setId ?? 'base1'));
             }}
             getCardSellPrice={(card) => getSellPrice(card, card.setId ?? 'base1')}
           />
@@ -538,6 +539,8 @@ export default function App() {
         onClearAchievements={devClearAchievements}
         onAwardFreePacks={devAwardFreePacks}
         onReopenTutorial={handleReopenTutorial}
+        collection={collection}
+        onSetCollectionCardGrade={devSetCardGrade}
         onMaxPity={() => {
           if (!selectedSetId) return;
           setPityCounters((prev) => {

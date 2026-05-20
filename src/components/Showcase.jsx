@@ -4,6 +4,7 @@ import { getCardImageUrl } from '../services/tcgdex.js';
 import './Showcase.css';
 
 const STORAGE_KEY = 'pkmon_showcase';
+const SLAB_TOGGLE_KEY = 'pkmon_showcase_slabs';
 const MAX_SLOTS = 10;
 
 function loadSlots() {
@@ -17,17 +18,83 @@ function saveSlots(slots) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slots)); } catch { /* ignore */ }
 }
 
+function loadSlabToggle() {
+  try {
+    const raw = localStorage.getItem(SLAB_TOGGLE_KEY);
+    if (raw == null) return true;
+    return raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+function saveSlabToggle(enabled) {
+  try { localStorage.setItem(SLAB_TOGGLE_KEY, enabled ? '1' : '0'); } catch { /* ignore */ }
+}
+
+function getHighestGrade(card) {
+  if (card?.graded && typeof card.graded === 'object') {
+    const grades = Object.entries(card.graded)
+      .filter(([, qty]) => (Number(qty) || 0) > 0)
+      .map(([grade]) => Number(grade))
+      .filter((grade) => Number.isInteger(grade) && grade >= 1 && grade <= 10)
+      .sort((a, b) => b - a);
+    if (grades.length > 0) return grades[0];
+  }
+  if (typeof card?.grade === 'number' && card.grade >= 1 && card.grade <= 10) return card.grade;
+  return null;
+}
+
+function makeSlotCard(card, variant, highestGrade) {
+  const baseId = card.baseCardId ?? card.id;
+  return {
+    ...card,
+    baseCardId: baseId,
+    slotId: `${baseId}__showcase_${variant}${variant === 'graded' ? `_${highestGrade}` : ''}`,
+    showcaseVariant: variant,
+    grade: variant === 'graded' ? highestGrade : null,
+  };
+}
+
+function normalizeLoadedSlot(slot) {
+  if (!slot) return slot;
+  if (slot.slotId && slot.showcaseVariant) return slot;
+  const baseId = slot.baseCardId ?? slot.id;
+  const variant = typeof slot.grade === 'number' ? 'graded' : 'ungraded';
+  return {
+    ...slot,
+    baseCardId: baseId,
+    slotId: `${baseId}__showcase_${variant}${variant === 'graded' ? `_${slot.grade}` : ''}`,
+    showcaseVariant: variant,
+  };
+}
+
 export default function Showcase({ collection }) {
-  const [slots, setSlots] = useState(() => loadSlots());
+  const [slots, setSlots] = useState(() => loadSlots().map(normalizeLoadedSlot));
+  const [showSlabs, setShowSlabs] = useState(() => loadSlabToggle());
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef(null);
 
-  const slotIds = useMemo(() => new Set(slots.map((c) => c.id)), [slots]);
+  const slotIds = useMemo(() => new Set(slots.map((c) => c.slotId ?? c.id)), [slots]);
   const favouriteIds = useMemo(() => getFavourites(), []);
 
-  // All favourited owned cards not already in the showcase
+  // All favourited owned cards as selectable showcase variants.
   const favouritedCards = useMemo(() => {
-    return collection.filter((c) => favouriteIds.has(c.id) && !slotIds.has(c.id));
+    const items = [];
+    for (const card of collection) {
+      const baseId = card.baseCardId ?? card.id;
+      if (!favouriteIds.has(baseId)) continue;
+
+      const highestGrade = getHighestGrade(card);
+      const ungradedVariant = makeSlotCard(card, 'ungraded', highestGrade);
+      if (!slotIds.has(ungradedVariant.slotId)) items.push(ungradedVariant);
+
+      if (highestGrade != null) {
+        const gradedVariant = makeSlotCard(card, 'graded', highestGrade);
+        if (!slotIds.has(gradedVariant.slotId)) items.push(gradedVariant);
+      }
+    }
+    return items;
   }, [collection, favouriteIds, slotIds]);
 
   const addCard = useCallback((card) => {
@@ -37,11 +104,19 @@ export default function Showcase({ collection }) {
     saveSlots(next);
   }, [slots]);
 
-  const removeCard = useCallback((cardId) => {
-    const next = slots.filter((c) => c.id !== cardId);
+  const removeCard = useCallback((slotId) => {
+    const next = slots.filter((c) => (c.slotId ?? c.id) !== slotId);
     setSlots(next);
     saveSlots(next);
   }, [slots]);
+
+  const toggleSlabs = useCallback(() => {
+    setShowSlabs((prev) => {
+      const next = !prev;
+      saveSlabToggle(next);
+      return next;
+    });
+  }, []);
 
   const handleExport = useCallback(async () => {
     if (!exportRef.current || slots.length === 0) return;
@@ -101,11 +176,11 @@ export default function Showcase({ collection }) {
             <div className="showcase-pick-grid">
               {favouritedCards.map((card) => (
                 <button
-                  key={card.id}
+                  key={card.slotId}
                   className={`showcase-pick-card${slots.length >= MAX_SLOTS ? ' showcase-pick-card--disabled' : ''}`}
                   onClick={() => addCard(card)}
                   disabled={slots.length >= MAX_SLOTS}
-                  title={`Add ${card.name}`}
+                  title={`Add ${card.name} (${card.showcaseVariant === 'graded' ? `Grade ${card.grade}` : 'Ungraded'})`}
                 >
                   <img
                     src={getCardImageUrl(card, 'low')}
@@ -113,6 +188,9 @@ export default function Showcase({ collection }) {
                     className="showcase-pick-card__img"
                     loading="lazy"
                   />
+                  <span className={`showcase-pick-card__variant${card.showcaseVariant === 'graded' ? ' showcase-pick-card__variant--graded' : ''}`}>
+                    {card.showcaseVariant === 'graded' ? `G${card.grade}` : 'RAW'}
+                  </span>
                   <span className="showcase-pick-card__add">+</span>
                 </button>
               ))}
@@ -134,6 +212,10 @@ export default function Showcase({ collection }) {
             >
               {exporting ? 'Exporting…' : '⤓ Export Image'}
             </button>
+            <label className="showcase-slab-toggle" title="Toggle slab display for graded showcase entries">
+              <input type="checkbox" checked={showSlabs} onChange={toggleSlabs} />
+              Slabs on graded cards
+            </label>
           </div>
 
           {slots.length === 0 ? (
@@ -151,8 +233,11 @@ export default function Showcase({ collection }) {
                 </div>
                 <div className="showcase-grid">
                   {slots.map((card) => (
-                    <div key={card.id} className="showcase-slot">
-                      <div className="showcase-slot__card-area">
+                    <div key={card.slotId ?? card.id} className="showcase-slot">
+                      <div className={`showcase-slot__card-area${card.showcaseVariant === 'graded' && showSlabs ? ' showcase-slot__card-area--graded' : ''}`}>
+                        {card.showcaseVariant === 'graded' && showSlabs && (
+                          <div className="showcase-slot__grade-tag">GRADE {card.grade}</div>
+                        )}
                         <img
                           src={getCardImageUrl(card, 'high')}
                           alt={card.name}
@@ -164,7 +249,7 @@ export default function Showcase({ collection }) {
                       <div className="showcase-slot__base" />
                       <button
                         className="showcase-slot__remove"
-                        onClick={() => removeCard(card.id)}
+                        onClick={() => removeCard(card.slotId ?? card.id)}
                         title={`Remove ${card.name}`}
                       >
                         ×

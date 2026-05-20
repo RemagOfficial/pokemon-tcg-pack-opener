@@ -188,6 +188,22 @@
 .dev-input::placeholder { color: #484f58; }
 .dev-input:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.dev-select {
+  width: 100%;
+  box-sizing: border-box;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.dev-select:focus { border-color: #f59e0b; }
+.dev-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .dev-card-list {
   max-height: 240px;
   overflow-y: auto;

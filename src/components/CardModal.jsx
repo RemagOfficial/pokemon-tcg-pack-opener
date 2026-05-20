@@ -1,7 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { getCardImageUrl } from '../services/tcgdex.js';
-import { isFavourited, toggleFavourite } from '../services/favourites.js';
+import { isFavourited, toggleFavourite, toFavouriteKey } from '../services/favourites.js';
+import { rollGrade } from '../services/grading.js';
+import { getGradeMultiplier } from '../services/grading.js';
+import { SETS } from '../services/sets.js';
 import './CardModal.css';
+import cardBackImg from '../assets/back_of_card.webp';
 
 const RARITY_COLOR = {
   'Common':    '#9ca3af',
@@ -16,14 +20,43 @@ const RARITY_COLOR = {
 const TILT_MAX = 34;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-export default function CardModal({ card, onClose, onFavouriteChange }) {
+export default function CardModal({ card, onClose, onFavouriteChange, onGradeCard }) {
   const imageWrapRef = useRef(null);
-  const [favourited, setFavourited] = useState(() => card ? isFavourited(card.id) : false);
+  const slabRevealTimerRef = useRef(null);
+  const backViewOnTimerRef = useRef(null);
+  const backViewOffTimerRef = useRef(null);
+  const favKey = toFavouriteKey(card?.baseCardId ?? card?.id);
+  const [favourited, setFavourited] = useState(() => card ? isFavourited(favKey) : false);
+  const [gradingState, setGradingState] = useState('idle'); // idle | animating | done
+  const [revealedGrade, setRevealedGrade] = useState(() => (typeof card?.grade === 'number' ? card.grade : null));
+  const [gradingIntensity, setGradingIntensity] = useState(0);
+  const [gradingDuration, setGradingDuration] = useState(1600);
+  const [slabRevealReady, setSlabRevealReady] = useState(false);
+  const [isBackView, setIsBackView] = useState(false);
   // Track whether gyroscope is actively driving tilt so touch can act as fallback
   const gyroActiveRef = useRef(false);
 
+  useEffect(() => {
+    setRevealedGrade(typeof card?.grade === 'number' ? card.grade : null);
+    setGradingState('idle');
+    setGradingIntensity(0);
+    setGradingDuration(1600);
+    setSlabRevealReady(false);
+    setIsBackView(false);
+    clearTimeout(slabRevealTimerRef.current);
+    clearTimeout(backViewOnTimerRef.current);
+    clearTimeout(backViewOffTimerRef.current);
+    setFavourited(card ? isFavourited(toFavouriteKey(card.baseCardId ?? card.id)) : false);
+  }, [card?.id]);
+
+  useEffect(() => () => {
+    clearTimeout(slabRevealTimerRef.current);
+    clearTimeout(backViewOnTimerRef.current);
+    clearTimeout(backViewOffTimerRef.current);
+  }, []);
+
   const handleFavourite = useCallback(() => {
-    const nowFav = toggleFavourite(card.id);
+    const nowFav = toggleFavourite(card.baseCardId ?? card.id);
     setFavourited(nowFav);
     onFavouriteChange?.();
   }, [card, onFavouriteChange]);
@@ -83,6 +116,45 @@ export default function CardModal({ card, onClose, onFavouriteChange }) {
   const isHolo = card.holo === true;
   const isReverseHolo = card.reverseHolo === true;
   const rarityColor = RARITY_COLOR[card.rarity] ?? '#9ca3af';
+  const setName = card.setName ?? card.set?.name ?? SETS.find((s) => s.id === (card.setId ?? 'base1'))?.name ?? 'Unknown Set';
+  const grade = typeof card.grade === 'number' ? card.grade : revealedGrade;
+  const isGraded = typeof grade === 'number';
+  const gradeMultiplier = getGradeMultiplier(grade);
+  const gradeBonusPct = Math.round((gradeMultiplier - 1) * 100);
+  const showGradedFrame = isGraded && (gradingState !== 'animating' || slabRevealReady);
+  const gradedCopies = card?.graded
+    ? Object.values(card.graded).reduce((sum, qty) => sum + (Number(qty) || 0), 0)
+    : (typeof card?.grade === 'number' ? (card.count ?? 1) : 0);
+  const ungradedCopies = Math.max(0, (card.count ?? 1) - gradedCopies);
+  const canSubmitGrade = !isGraded && gradingState !== 'animating' && !!onGradeCard;
+
+  const handleSubmitToGrading = async () => {
+    if (!onGradeCard || isGraded || gradingState === 'animating') return;
+    const rolled = rollGrade(card);
+
+    setRevealedGrade(rolled);
+    const intensity = Math.max(0, rolled - 5);
+    const duration = 2200 + intensity * 320;
+    setGradingIntensity(intensity);
+    setGradingDuration(duration);
+    setSlabRevealReady(false);
+    setIsBackView(false);
+    setGradingState('animating');
+    backViewOnTimerRef.current = setTimeout(() => {
+      setIsBackView(true);
+    }, Math.floor(duration * 0.16));
+    backViewOffTimerRef.current = setTimeout(() => {
+      setIsBackView(false);
+    }, Math.floor(duration * 0.88));
+    // Apply slab while card is still facing away, then flip it back at the end.
+    slabRevealTimerRef.current = setTimeout(() => {
+      setSlabRevealReady(true);
+    }, Math.floor(duration * 0.68));
+    await new Promise((resolve) => setTimeout(resolve, duration));
+    await Promise.resolve(onGradeCard(card, rolled));
+    setGradingState('done');
+    setIsBackView(false);
+  };
 
   // ── Mouse tilt (desktop) ─────────────────────────────────────────────────
   const handleMouseMove = (e) => {
@@ -131,15 +203,34 @@ export default function CardModal({ card, onClose, onFavouriteChange }) {
 
         <div
           ref={imageWrapRef}
-          className={`card-modal-image-wrap${(isHolo || isReverseHolo) ? ' card-modal-image-wrap--holo' : ''}`}
+          className={`card-modal-image-wrap${(isHolo || isReverseHolo) ? ' card-modal-image-wrap--holo' : ''}${showGradedFrame ? ' card-modal-image-wrap--graded' : ''}${gradingState === 'animating' ? ' card-modal-image-wrap--grading' : ''}`}
+          style={gradingState === 'animating' ? {
+            '--grade-intensity': gradingIntensity,
+            '--grading-duration': `${gradingDuration}ms`,
+          } : undefined}
         >
-          <img
-            src={imageUrl}
-            alt={card.name}
-            className="card-modal-image"
-            draggable="false"
-          />
-          {(isHolo || isReverseHolo) && <div className="card-modal-holo" />}
+          <div className={`card-modal-flip${isBackView ? ' card-modal-flip--backview' : ''}`}>
+            <div className="card-modal-face card-modal-face--front">
+              {showGradedFrame && !isBackView && <div className="card-modal-grade-tag">GRADE {grade}</div>}
+              <img
+                src={isBackView ? cardBackImg : imageUrl}
+                alt={isBackView ? 'Card back' : card.name}
+                className={isBackView ? 'card-modal-cardback' : 'card-modal-image'}
+                draggable="false"
+              />
+              {(isHolo || isReverseHolo) && !isBackView && <div className="card-modal-holo" />}
+            </div>
+            <div className="card-modal-face card-modal-face--back">
+              {showGradedFrame && <div className="card-modal-grade-tag-back" aria-hidden="true" />}
+              <img src={cardBackImg} alt="Card back" className="card-modal-cardback" draggable="false" />
+            </div>
+          </div>
+          {gradingState === 'animating' && (
+            <>
+              <div className="card-modal-grade-flash" />
+              <div className="card-modal-grade-shake-lines" />
+            </>
+          )}
         </div>
 
         <div className="card-modal-meta">
@@ -147,7 +238,37 @@ export default function CardModal({ card, onClose, onFavouriteChange }) {
           <span className="card-modal-rarity" style={{ color: rarityColor }}>
             {card.rarity}{isHolo && <span style={{ color: '#c084fc' }}> ✦ Holo</span>}{isReverseHolo && <span style={{ color: '#22d3ee' }}> ✦ Reverse Holo</span>}
           </span>
-          <span className="card-modal-set">Base Set · #{card.localId}</span>
+          <span className="card-modal-set">{setName} · #{card.localId ?? '?'}</span>
+
+          <div className="card-modal-grading">
+            {canSubmitGrade && (
+              <button className="card-modal-grade-btn" onClick={handleSubmitToGrading} disabled={ungradedCopies <= 0}>
+                {ungradedCopies <= 0 ? 'All Copies Graded' : 'Submit To Grading'}
+              </button>
+            )}
+
+            {gradingState === 'animating' && !showGradedFrame && (
+              <div className="card-modal-grading-anim" aria-live="polite">
+                <div className="card-modal-grading-scan" />
+                <span>
+                  {gradingIntensity >= 4
+                    ? 'Ultra-clean slab check... almost there.'
+                    : gradingIntensity >= 2
+                      ? 'Centering and surface scoring...'
+                      : 'Authenticating and inspecting...'}
+                </span>
+              </div>
+            )}
+
+            {showGradedFrame && (
+              <div className="card-modal-grade-info">
+                <strong>Certified Grade: {grade}</strong>
+                <span>
+                  {gradeBonusPct > 0 ? `Sell value bonus: +${gradeBonusPct}%` : 'No sell bonus at grades 1-5'}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

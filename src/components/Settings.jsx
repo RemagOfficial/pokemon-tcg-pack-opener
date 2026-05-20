@@ -3,6 +3,17 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.8.0',
+    date: '2026-05-20',
+    entries: [
+      'Card grading system added — grade cards 1-10 with rarity-aware grade rolls and sell-value multipliers',
+      'Collection grading flow — submit cards to grading from fullscreen view with slab reveal and grade results',
+      'Graded collection support — graded copies are tracked per grade and shown in dedicated graded views/filters',
+      'Showcase grading support — add both graded and ungraded variants of a favourited card, with optional slab display toggle',
+      'Fullscreen card details fix — card modal now shows the correct set name for each card instead of always displaying Base Set',
+    ],
+  },
+  {
     version: '1.7.0',
     date: '2026-05-20',
     entries: [

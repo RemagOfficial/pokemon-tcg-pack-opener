@@ -7,6 +7,8 @@
  * Sell prices are a rarity-scaled fraction of the set's pack price.
  */
 
+import { getGradeMultiplier } from './grading.js';
+
 // Sets in release order — matches the order in sets.js
 export const SET_ORDER = [
   'base1', 'base2', 'base3', 'base4', 'base5',
@@ -68,6 +70,7 @@ export function getSellPrice(card, setId) {
   let factor = baseFactor;
   if (card.holo)             factor = baseFactor * HOLO_SELL_MULTIPLIER;
   else if (card.reverseHolo) factor = baseFactor * REVERSE_HOLO_SELL_MULTIPLIER;
+  factor *= getGradeMultiplier(card.grade);
   // Math.ceil ensures that 6 commons + 3 uncommons + 1 non-holo rare always
   // sums to at least the pack price (verified across every set in SET_ORDER).
   return Math.max(1, Math.ceil(packPrice * factor));

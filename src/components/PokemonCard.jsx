@@ -13,7 +13,7 @@ const RARITY_LABEL = {
 const HOLO_SUFFIX    = { label: ' ✦', color: '#c084fc' };
 const REVERSE_SUFFIX = { label: ' ✦', color: '#22d3ee' };
 
-export default function PokemonCard({ card, size = 'normal', showCount = false, onClick, unowned = false, secretUnowned = false }) {
+export default function PokemonCard({ card, size = 'normal', showCount = false, onClick, unowned = false, secretUnowned = false, showGraded = false }) {
   // Secret rare not yet found – render a fully blacked-out mystery card
   if (secretUnowned) {
     return (
@@ -30,13 +30,16 @@ export default function PokemonCard({ card, size = 'normal', showCount = false, 
   const isHolo = card.holo === true;
   const isReverseHolo = card.reverseHolo === true;
   const isSecretRare = card.rarity === 'Secret Rare';
+  const hasGrade = typeof card.grade === 'number';
+  const isGraded = hasGrade && showGraded;
   const base = RARITY_LABEL[card.rarity] ?? RARITY_LABEL['Common'];
 
   return (
     <div
-      className={`pcard size-${size}${(isHolo || isReverseHolo) ? ' pcard--holo' : ''}${isSecretRare ? ' pcard--secret-rare' : ''}${onClick ? ' pcard--clickable' : ''}${unowned ? ' pcard--unowned' : ''}`}
+      className={`pcard size-${size}${(isHolo || isReverseHolo) ? ' pcard--holo' : ''}${isSecretRare ? ' pcard--secret-rare' : ''}${isGraded ? ' pcard--graded' : ''}${onClick ? ' pcard--clickable' : ''}${unowned ? ' pcard--unowned' : ''}`}
       onClick={onClick ? () => onClick(card) : undefined}
     >
+      {isGraded && <div className="pcard__grade-tag">GRADE {card.grade}</div>}
       <img
         className="pcard__img"
         src={imageUrl}

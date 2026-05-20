@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './DevPanel.css';
 
 const SAMPLE_TOASTS = [
@@ -22,11 +22,17 @@ export default function DevPanel({
   onClearAchievements,
   onAwardFreePacks,
   onReopenTutorial,
+  collection,
+  onSetCollectionCardGrade,
   onMaxPity,
 }) {
   const [tab, setTab]           = useState('toasts');
   const [cardFilter, setCardFilter] = useState('');
   const [draftPack, setDraftPack]   = useState([]);
+  const [gradeCardFilter, setGradeCardFilter] = useState('');
+  const [gradeCardId, setGradeCardId] = useState('');
+  const [gradeValue, setGradeValue] = useState(10);
+  const [gradeStatus, setGradeStatus] = useState('');
 
   // Sort and filter cards for the picker
   const filteredCards = useMemo(() => {
@@ -46,6 +52,44 @@ export default function DevPanel({
       .slice(0, 80);
   }, [currentSetCards, cardFilter]);
 
+  const gradeCandidates = useMemo(() => {
+    const list = Array.isArray(collection) ? collection : [];
+    const q = gradeCardFilter.toLowerCase().trim();
+    const pool = q
+      ? list.filter((c) => c.name?.toLowerCase().includes(q) || (c.setId ?? '').toLowerCase().includes(q))
+      : list;
+    return [...pool]
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+      .slice(0, 120);
+  }, [collection, gradeCardFilter]);
+
+  useEffect(() => {
+    if (gradeCandidates.length === 0) {
+      setGradeCardId('');
+      return;
+    }
+    if (!gradeCandidates.some((c) => c.id === gradeCardId)) {
+      setGradeCardId(gradeCandidates[0].id);
+    }
+  }, [gradeCandidates, gradeCardId]);
+
+  const selectedGradeCard = useMemo(
+    () => (collection ?? []).find((c) => c.id === gradeCardId) ?? null,
+    [collection, gradeCardId],
+  );
+
+  const selectedGradeCardStats = useMemo(() => {
+    if (!selectedGradeCard) return null;
+    const graded = selectedGradeCard.graded ?? {};
+    const gradedTotal = Object.values(graded).reduce((sum, qty) => sum + (Number(qty) || 0), 0);
+    const total = selectedGradeCard.count ?? 1;
+    return {
+      total,
+      gradedTotal,
+      ungraded: Math.max(0, total - gradedTotal),
+    };
+  }, [selectedGradeCard]);
+
   const addToDraft = (card) => {
     if (draftPack.length >= 10) return;
     setDraftPack((prev) => [...prev, card]);
@@ -59,6 +103,12 @@ export default function DevPanel({
     if (draftPack.length === 0) return;
     onSetForcedPack([...draftPack]);
     setDraftPack([]);
+  };
+
+  const applyForcedGrade = () => {
+    if (!gradeCardId || !onSetCollectionCardGrade) return;
+    const ok = onSetCollectionCardGrade(gradeCardId, gradeValue);
+    setGradeStatus(ok ? `Applied grade ${gradeValue}.` : 'Could not apply grade.');
   };
 
   const RARITY_COLORS = {
@@ -212,6 +262,51 @@ export default function DevPanel({
             <button className="dev-btn dev-btn--wide" onClick={onReopenTutorial}>
               📖 Reopen Tutorial
             </button>
+            <div className="dev-divider" />
+            <p className="dev-label">Force Grade (No Animation)</p>
+            <p className="dev-hint">Pick any owned card and directly assign one copy to a chosen grade.</p>
+            <input
+              className="dev-input"
+              placeholder="Filter owned cards by name or set id…"
+              value={gradeCardFilter}
+              onChange={(e) => setGradeCardFilter(e.target.value)}
+            />
+            <select
+              className="dev-select"
+              value={gradeCardId}
+              onChange={(e) => setGradeCardId(e.target.value)}
+              disabled={gradeCandidates.length === 0}
+            >
+              {gradeCandidates.length === 0 && <option value="">No cards in collection</option>}
+              {gradeCandidates.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} x{c.count ?? 1}
+                </option>
+              ))}
+            </select>
+            <select
+              className="dev-select"
+              value={gradeValue}
+              onChange={(e) => setGradeValue(Number(e.target.value))}
+              disabled={gradeCandidates.length === 0}
+            >
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((g) => (
+                <option key={g} value={g}>Grade {g}</option>
+              ))}
+            </select>
+            {selectedGradeCardStats && (
+              <p className="dev-hint">
+                Owned: {selectedGradeCardStats.total} · Graded: {selectedGradeCardStats.gradedTotal} · Ungraded: {selectedGradeCardStats.ungraded}
+              </p>
+            )}
+            <button
+              className="dev-btn dev-btn--primary dev-btn--wide"
+              onClick={applyForcedGrade}
+              disabled={!gradeCardId}
+            >
+              Apply Grade Now
+            </button>
+            {gradeStatus && <p className="dev-hint">{gradeStatus}</p>}
           </div>
         )}
 

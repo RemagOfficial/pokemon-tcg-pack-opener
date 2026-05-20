@@ -94,7 +94,7 @@
 .card-modal-image-wrap {
   position: relative;
   border-radius: 14px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
   transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transform-style: preserve-3d;
@@ -115,11 +115,115 @@
               0 0 28px rgba(80, 200, 255, 0.4);
 }
 
+.card-modal-image-wrap--graded {
+  padding: 48px 16px 14px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.28) 0%, rgba(219, 229, 241, 0.22) 100%);
+  border-radius: 16px;
+  border: 3px solid rgba(226, 232, 240, 0.45);
+  backdrop-filter: blur(6px) saturate(1.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.82), 0 0 0 1px rgba(148, 163, 184, 0.35), inset 0 0 20px rgba(226, 232, 240, 0.18);
+}
+
+.card-modal-image-wrap--graded::before {
+  content: '';
+  position: absolute;
+  inset: 8px 8px 8px 8px;
+  border-radius: 12px;
+  border: 2px solid rgba(226, 232, 240, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-modal-grade-tag {
+  position: absolute;
+  top: -32.5px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  background: linear-gradient(180deg, #f8fafc, #cbd5e1);
+  color: #0f172a;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.25);
+  padding: 4px 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
 .card-modal-image {
   display: block;
   height: min(72vh, 560px);
   width: auto;
-  border-radius: inherit;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.card-modal-image-wrap--graded .card-modal-image {
+  height: min(62vh, 470px);
+}
+
+.card-modal-flip {
+  display: grid;
+  transform-style: preserve-3d;
+}
+
+.card-modal-face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: opacity 120ms linear;
+}
+
+.card-modal-face--front {
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+
+.card-modal-face--back {
+  transform: rotateY(180deg);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.card-modal-flip--backview .card-modal-face--front {
+  opacity: 0;
+  z-index: 1;
+}
+
+.card-modal-flip--backview .card-modal-face--back {
+  opacity: 1;
+  z-index: 3;
+}
+
+.card-modal-cardback {
+  display: block;
+  height: min(72vh, 560px);
+  width: auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.card-modal-image-wrap--graded .card-modal-cardback {
+  height: min(62vh, 470px);
+}
+
+.card-modal-grade-tag-back {
+  position: absolute;
+  top: -32.5px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: 84px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
 }
 
 .card-modal-holo {
@@ -140,6 +244,77 @@
   background-size: 250% 250%;
   mix-blend-mode: color-dodge;
   animation: holoShimmer 4s ease-in-out infinite;
+}
+
+.card-modal-image-wrap--graded .card-modal-holo {
+  inset: 0;
+  border-radius: 12px;
+}
+
+.card-modal-image-wrap--grading {
+  animation: gradingSlabFlipShake var(--grading-duration, 1600ms) ease-in-out;
+}
+
+.card-modal-grade-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 5;
+  background: #ffffff;
+  opacity: 0;
+  animation: gradeWhiteOut var(--grading-duration, 1600ms) ease-in-out forwards;
+}
+
+.card-modal-grade-shake-lines {
+  position: absolute;
+  inset: -8px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 4;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  filter: blur(2px);
+  opacity: 0;
+  animation: gradeRings var(--grading-duration, 1600ms) ease-in-out;
+}
+
+@keyframes gradingSlabFlipShake {
+  0% {
+    transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(0deg) scale(1) translateX(0px);
+  }
+  18% {
+    transform: perspective(1200px) rotateX(0deg) rotateY(160deg) scale(1.02) translateX(-3px);
+  }
+  32% {
+    transform: perspective(1200px) rotateX(0deg) rotateY(180deg) scale(1.03) translateX(3px);
+  }
+  46% {
+    transform: perspective(1200px) rotateX(0deg) rotateY(180deg) scale(1.04) translateX(-4px);
+  }
+  60% {
+    transform: perspective(1200px) rotateX(0deg) rotateY(180deg) scale(calc(1.04 + (var(--grade-intensity, 0) * 0.01))) translateX(4px);
+  }
+  82% {
+    transform: perspective(1200px) rotateX(0deg) rotateY(180deg) scale(calc(1.03 + (var(--grade-intensity, 0) * 0.01))) translateX(-2px);
+  }
+  100% {
+    transform: perspective(1200px) rotateX(0deg) rotateY(360deg) scale(1) translateX(0px);
+  }
+}
+
+@keyframes gradeWhiteOut {
+  0%, 64% { opacity: 0; }
+  72% { opacity: calc(0.7 + (var(--grade-intensity, 0) * 0.06)); }
+  80% { opacity: calc(0.96 + (var(--grade-intensity, 0) * 0.02)); }
+  90% { opacity: calc(0.35 + (var(--grade-intensity, 0) * 0.04)); }
+  100% { opacity: 0; }
+}
+
+@keyframes gradeRings {
+  0%, 62% { opacity: 0; transform: scale(0.98); }
+  72% { opacity: calc(0.28 + (var(--grade-intensity, 0) * 0.08)); transform: scale(1.02); }
+  86% { opacity: calc(0.45 + (var(--grade-intensity, 0) * 0.1)); transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.08); }
 }
 
 @keyframes holoShimmer {
@@ -173,6 +348,83 @@
   font-size: 0.75rem;
   color: #475569;
   letter-spacing: 0.05em;
+}
+
+.card-modal-grading {
+  margin-top: 8px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.card-modal-grade-btn {
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.card-modal-grade-btn:hover {
+  transform: translateY(-1px);
+  background: #334155;
+  border-color: #475569;
+}
+
+.card-modal-grade-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  background: #0f172a;
+  border-color: #1e293b;
+  color: #94a3b8;
+}
+
+.card-modal-grading-anim {
+  width: 280px;
+  border: 1px solid rgba(71, 85, 105, 0.8);
+  background: rgba(15, 23, 42, 0.82);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-modal-grading-scan {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(59,130,246,0.15), rgba(59,130,246,0.95), rgba(59,130,246,0.15));
+  background-size: 220% 100%;
+  animation: gradingScan 0.9s linear infinite;
+}
+
+@keyframes gradingScan {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.card-modal-grade-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+}
+
+.card-modal-grade-info strong {
+  color: #f8fafc;
 }
 
 /* ── Mobile ────────────────────────────────────────────────── */
