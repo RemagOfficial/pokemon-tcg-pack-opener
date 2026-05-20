@@ -15,6 +15,8 @@ export const SET_ORDER = [
   'ex1',   'ex2',   'ex3',   'ex4',   'ex5',   'ex6',
   'ex7',   'ex8',   'ex9',   'ex10',  'ex11',
   'ex12',  'ex13',  'ex14',  'ex15',  'ex16',
+  'dp1',
+  'dp2', 'dp3', 'dp4', 'dp5', 'dp6', 'dp7',
 ];
 
 // Build the price table once at module load
@@ -48,6 +50,8 @@ const RARITY_SELL_FACTOR = {
   'Uncommon':    0.12,
   'Rare':        0.28,
   'Rare ex':     0.60,
+  'Rare LV.X':   0.60,
+  'Rare Shiny':  1.50,
   'Secret Rare': 1.00,
 };
 const HOLO_SELL_MULTIPLIER         = 1.5;   // full holo treatment

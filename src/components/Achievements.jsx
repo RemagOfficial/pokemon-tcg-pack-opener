@@ -17,7 +17,10 @@ const RARITY_CLASS = {
   'Uncommon': 'rarity--uncommon',
   'Rare':     'rarity--rare',
   'Rare Holo':'rarity--rare-holo',
+  'Rare LV.X':'rarity--rare-lvx',
+  'Rare Shiny':'rarity--rare-shiny',
   null:       'rarity--master',
+  'all-variants':'rarity--master',
 };
 
 export default function Achievements({ collection, allCards, economyMode = false }) {

@@ -7,6 +7,8 @@ const TIER = {
   'Uncommon':     2,
   'Rare':         3,
   'Rare ex':      3,
+  'Rare LV.X':    3,
+  'Rare Shiny':   5,
   'Rare Holo':    4,
   'all-variants': 4,
 };

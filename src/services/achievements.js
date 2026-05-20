@@ -647,6 +647,114 @@ export const ACHIEVEMENT_SETS = [
       { id: 'ex16-full',     title: 'True Power Keeper Master',   description: 'Own every card and every Reverse Holo in EX Power Keepers', icon: '◈', rarity: 'all-variants', fallbackTotal: 108, filter: (c) => c },
     ],
   },
+
+  // ── Diamond & Pearl series ─────────────────────────────────────────────
+  {
+    id: 'dp1',
+    tcgdexId: 'dp1',
+    name: 'Diamond & Pearl',
+    year: '2007',
+    achievements: [
+      { id: 'dp1-common',   title: 'Diamond Basics',              description: 'Collect all Common cards',                                       icon: '○', rarity: 'Common',    fallbackTotal: 59,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp1-uncommon', title: 'Pearl Uncommons',             description: 'Collect all Uncommon cards',                                     icon: '◇', rarity: 'Uncommon',  fallbackTotal: 5,   filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp1-rare',     title: 'D&P Rares',                   description: 'Collect all Rare cards',                                         icon: '★', rarity: 'Rare',      fallbackTotal: 34,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp1-holo',     title: 'Diamond Shine',               description: 'Collect all Rare Holo cards',                                    icon: '✦', rarity: 'Rare Holo', fallbackTotal: 29,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp1-lvx',      title: 'LV.X Ascension',              description: 'Collect all LV.X cards',                                         icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 3,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp1-complete', title: 'Diamond & Pearl Master',      description: 'Own at least one print of every card in Diamond & Pearl',        icon: '◆', rarity: null,         fallbackTotal: 130, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp1-full',     title: 'True Diamond & Pearl Master', description: 'Own every card and every Reverse Holo in Diamond & Pearl',      icon: '◈', rarity: 'all-variants', fallbackTotal: 130, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'dp2',
+    tcgdexId: 'dp2',
+    name: 'Mysterious Treasures',
+    year: '2007',
+    achievements: [
+      { id: 'dp2-common',   title: 'Unearthed Commons',               description: 'Collect all Common cards',                                       icon: '○', rarity: 'Common',    fallbackTotal: 52,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp2-uncommon', title: 'Fossil Find',                     description: 'Collect all Uncommon cards',                                     icon: '◇', rarity: 'Uncommon',  fallbackTotal: 28,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp2-rare',     title: 'Treasure Seeker',                 description: 'Collect all Rare cards',                                         icon: '★', rarity: 'Rare',      fallbackTotal: 23,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp2-holo',     title: 'Ancient Glow',                    description: 'Collect all Rare Holo cards',                                    icon: '✦', rarity: 'Rare Holo', fallbackTotal: 17,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp2-lvx',      title: 'Mysterious LV.X',                 description: 'Collect all LV.X cards',                                         icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 3,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp2-complete', title: 'Mysterious Treasures Master',     description: 'Own at least one print of every card in Mysterious Treasures',   icon: '◆', rarity: null,         fallbackTotal: 123, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp2-full',     title: 'True Mysterious Treasures Master',description: 'Own every card and every Reverse Holo in Mysterious Treasures',  icon: '◈', rarity: 'all-variants', fallbackTotal: 123, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'dp3',
+    tcgdexId: 'dp3',
+    name: 'Secret Wonders',
+    year: '2007',
+    achievements: [
+      { id: 'dp3-common',   title: 'Wondrous Basics',           description: 'Collect all Common cards',                                   icon: '○', rarity: 'Common',    fallbackTotal: 55,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp3-uncommon', title: 'Secret Uncommons',          description: 'Collect all Uncommon cards',                                 icon: '◇', rarity: 'Uncommon',  fallbackTotal: 31,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp3-rare',     title: 'Wondrous Rares',            description: 'Collect all Rare cards',                                     icon: '★', rarity: 'Rare',      fallbackTotal: 24,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp3-holo',     title: 'Secret Shine',              description: 'Collect all Rare Holo cards',                                icon: '✦', rarity: 'Rare Holo', fallbackTotal: 20,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp3-lvx',      title: 'Secret LV.X',               description: 'Collect all LV.X cards',                                     icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 2,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp3-complete', title: 'Secret Wonders Master',     description: 'Own at least one print of every card in Secret Wonders',     icon: '◆', rarity: null,         fallbackTotal: 132, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp3-full',     title: 'True Secret Wonders Master',description: 'Own every card and every Reverse Holo in Secret Wonders',   icon: '◈', rarity: 'all-variants', fallbackTotal: 132, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'dp4',
+    tcgdexId: 'dp4',
+    name: 'Great Encounters',
+    year: '2008',
+    achievements: [
+      { id: 'dp4-common',   title: 'Common Encounters',           description: 'Collect all Common cards',                                     icon: '○', rarity: 'Common',    fallbackTotal: 43,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp4-uncommon', title: 'Uncommon Encounters',         description: 'Collect all Uncommon cards',                                   icon: '◇', rarity: 'Uncommon',  fallbackTotal: 27,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp4-rare',     title: 'Rare Encounter',              description: 'Collect all Rare cards',                                       icon: '★', rarity: 'Rare',      fallbackTotal: 13,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp4-holo',     title: 'Legendary Glow',              description: 'Collect all Rare Holo cards',                                  icon: '✦', rarity: 'Rare Holo', fallbackTotal: 19,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp4-lvx',      title: 'Great LV.X',                  description: 'Collect all LV.X cards',                                       icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 4,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp4-complete', title: 'Great Encounters Master',     description: 'Own at least one print of every card in Great Encounters',     icon: '◆', rarity: null,         fallbackTotal: 106, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp4-full',     title: 'True Great Encounters Master',description: 'Own every card and every Reverse Holo in Great Encounters',   icon: '◈', rarity: 'all-variants', fallbackTotal: 106, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'dp5',
+    tcgdexId: 'dp5',
+    name: 'Majestic Dawn',
+    year: '2008',
+    achievements: [
+      { id: 'dp5-common',   title: 'Dawn Patrol',               description: 'Collect all Common cards',                               icon: '○', rarity: 'Common',    fallbackTotal: 47,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp5-uncommon', title: 'Early Risers',              description: 'Collect all Uncommon cards',                             icon: '◇', rarity: 'Uncommon',  fallbackTotal: 15,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp5-rare',     title: 'Majestic Rares',            description: 'Collect all Rare cards',                                 icon: '★', rarity: 'Rare',      fallbackTotal: 18,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp5-holo',     title: 'Dawn Glow',                 description: 'Collect all Rare Holo cards',                            icon: '✦', rarity: 'Rare Holo', fallbackTotal: 16,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp5-lvx',      title: 'Majestic LV.X',             description: 'Collect all LV.X cards',                                 icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 4,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp5-complete', title: 'Majestic Dawn Master',      description: 'Own at least one print of every card in Majestic Dawn',  icon: '◆', rarity: null,         fallbackTotal: 100, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp5-full',     title: 'True Majestic Dawn Master', description: 'Own every card and every Reverse Holo in Majestic Dawn', icon: '◈', rarity: 'all-variants', fallbackTotal: 100, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'dp6',
+    tcgdexId: 'dp6',
+    name: 'Legends Awakened',
+    year: '2008',
+    achievements: [
+      { id: 'dp6-common',   title: 'Awakened Basics',             description: 'Collect all Common cards',                                   icon: '○', rarity: 'Common',    fallbackTotal: 57,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp6-uncommon', title: 'Legend Seekers',              description: 'Collect all Uncommon cards',                                 icon: '◇', rarity: 'Uncommon',  fallbackTotal: 37,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp6-rare',     title: 'Awakened Rares',              description: 'Collect all Rare cards',                                     icon: '★', rarity: 'Rare',      fallbackTotal: 28,  filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp6-holo',     title: 'Legend Glow',                 description: 'Collect all Rare Holo cards',                                icon: '✦', rarity: 'Rare Holo', fallbackTotal: 17,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp6-lvx',      title: 'Legends Awaken',              description: 'Collect all LV.X cards',                                     icon: '◉', rarity: 'Rare LV.X', fallbackTotal: 7,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp6-complete', title: 'Legends Awakened Master',     description: 'Own at least one print of every card in Legends Awakened',   icon: '◆', rarity: null,         fallbackTotal: 146, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp6-full',     title: 'True Legends Awakened Master',description: 'Own every card and every Reverse Holo in Legends Awakened',  icon: '◈', rarity: 'all-variants', fallbackTotal: 146, filter: (c) => c },
+    ],
+  },
+  {
+    id: 'dp7',
+    tcgdexId: 'dp7',
+    name: 'Stormfront',
+    year: '2008',
+    achievements: [
+      { id: 'dp7-common',   title: 'Storm Basics',         description: 'Collect all Common cards',                          icon: '○', rarity: 'Common',     fallbackTotal: 50,  filter: (c) => c.filter((x) => x.rarity === 'Common') },
+      { id: 'dp7-uncommon', title: 'Brewing Storm',        description: 'Collect all Uncommon cards',                        icon: '◇', rarity: 'Uncommon',   fallbackTotal: 20,  filter: (c) => c.filter((x) => x.rarity === 'Uncommon') },
+      { id: 'dp7-rare',     title: 'Storm Rares',          description: 'Collect all Rare cards',                            icon: '★', rarity: 'Rare',       fallbackTotal: 9,   filter: (c) => c.filter((x) => x.rarity === 'Rare' && !x.holo) },
+      { id: 'dp7-holo',     title: 'Storm Glow',           description: 'Collect all Rare Holo cards',                       icon: '✦', rarity: 'Rare Holo',  fallbackTotal: 16,  filter: (c) => c.filter((x) => x.holo === true && x.rarity === 'Rare') },
+      { id: 'dp7-lvx',      title: 'Storm LV.X',           description: 'Collect all LV.X cards',                            icon: '◉', rarity: 'Rare LV.X',  fallbackTotal: 5,   filter: (c) => c.filter((x) => x.rarity === 'Rare LV.X') },
+      { id: 'dp7-shiny',    title: 'Shiny Hunter',         description: 'Collect all Shiny Pokémon from Stormfront',         icon: '✦', rarity: 'Rare Shiny', fallbackTotal: 3,   filter: (c) => c.filter((x) => x.rarity === 'Rare Shiny') },
+      { id: 'dp7-complete', title: 'Stormfront Master',      description: 'Own at least one print of every card in Stormfront',       icon: '◆', rarity: null,          fallbackTotal: 100, anyVariant: true, filter: (c) => c.filter((x) => !x.reverseHolo) },
+      { id: 'dp7-full',     title: 'True Stormfront Master', description: 'Own every card and every Reverse Holo in Stormfront',     icon: '◈', rarity: 'all-variants',  fallbackTotal: 100, filter: (c) => c },
+    ],
+  },
 ];
 
 /**
@@ -656,7 +764,9 @@ export const ACHIEVEMENT_SETS = [
 export function getAchievementReward(ach) {
   if (ach.rarity === 'all-variants') return 25; // every card + every reverse holo
   if (ach.rarity === null)           return 15; // full set (any variant)
+  if (ach.rarity === 'Rare Shiny')   return 15; // shiny sub-set (ultra rare)
   if (ach.rarity === 'Rare ex')      return 12; // EX Pokemon
+  if (ach.rarity === 'Rare LV.X')    return 12; // LV.X Pokemon
   if (ach.rarity === 'Rare Holo')    return 10;
   if (ach.rarity === 'Rare')         return 7;
   if (ach.rarity === 'Uncommon')     return 5;

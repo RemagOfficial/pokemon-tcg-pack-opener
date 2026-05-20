@@ -3,6 +3,15 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.7.0',
+    date: '2026-05-20',
+    entries: [
+      'Full Diamond & Pearl series added — Diamond & Pearl through Stormfront (dp1–dp7)',
+      'Stormfront Shiny cards added as a dedicated rarity tier (SH1–SH3), separate from LV.X cards',
+      'LV.X and Shiny support polished across pulls, collection filters, badges, and achievements',
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-05-20',
     entries: [

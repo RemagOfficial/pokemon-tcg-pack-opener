@@ -8,6 +8,8 @@ const RARITY_COLOR = {
   'Uncommon':  '#4ade80',
   'Rare':      '#60a5fa',
   'Rare ex':   '#f97316',
+  'Rare LV.X': '#38bdf8',
+  'Rare Shiny': '#facc15',
   'Rare Holo': '#e879f9',
 };
 

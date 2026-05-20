@@ -5,7 +5,7 @@ import { getSetConfig, inferRarity } from './sets.js';
 const sdk = new TCGdex('en');
 
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days - WotC sets never change
-const CACHE_VERSION = 'v8'; // bump when card shape changes to invalidate old caches
+const CACHE_VERSION = 'v9'; // bump when card shape changes to invalidate old caches
 
 /**
  * Normalise a TCGdex rarity string to one of: Common | Uncommon | Rare | Secret Rare
@@ -13,7 +13,8 @@ const CACHE_VERSION = 'v8'; // bump when card shape changes to invalidate old ca
  */
 function normalizeRarity(r) {
   if (!r) return null;
-  if (r === 'Rare Holo') return 'Rare';
+  if (r === 'Rare Holo')        return 'Rare';
+  if (r === 'Rare Holo LV.X')  return 'Rare LV.X';
   return r;
 }
 
@@ -151,10 +152,18 @@ export async function loadSetCards(setId) {
       rarity = 'Secret Rare';
     }
 
+    // Stormfront Shiny cards (localId 'SH1', 'SH2', etc.) share TCGdex rarity
+    // "Rare Holo LV.X" with actual LV.X cards but are a distinct rarity tier.
+    if (/^SH\d/i.test(card.localId)) rarity = 'Rare Shiny';
+
     // --- Holo flag ---
-    const isHolo = vd !== null
-      ? vd.holo === true
-      : /^H/i.test(card.localId) || card.rarity === 'Rare Holo' || card.rarity === 'Holo Variant';
+    // LV.X and Shiny cards are always holofoil; force holo even for the API-less
+    // fallback path where vd is null.
+    const isHolo = (rarity === 'Rare LV.X' || rarity === 'Rare Shiny')
+      ? true
+      : vd !== null
+        ? vd.holo === true
+        : /^H/i.test(card.localId) || card.rarity === 'Rare Holo' || card.rarity === 'Holo Variant';
 
     // --- Image ---
     // Holo cards that have a separate normal-print partner share that card's image
@@ -194,7 +203,7 @@ export async function loadSetCards(setId) {
   const reverseHoloCards = cards
     .filter((card) => {
       const vd = variantMap.get(card.id);
-      return vd?.reverse === true && card.rarity !== 'Rare ex' && card.rarity !== 'Secret Rare';
+      return vd?.reverse === true && card.rarity !== 'Rare ex' && card.rarity !== 'Rare LV.X' && card.rarity !== 'Rare Shiny' && card.rarity !== 'Secret Rare';
     })
     .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false }));
 
@@ -246,7 +255,7 @@ export async function loadSetCards(setId) {
         const mergeRH = mergeCards
           .filter((card) => {
             const vd = mergeVariantMap.get(card.id);
-            return vd?.reverse === true && card.rarity !== 'Rare ex' && card.rarity !== 'Secret Rare';
+            return vd?.reverse === true && card.rarity !== 'Rare ex' && card.rarity !== 'Rare LV.X' && card.rarity !== 'Rare Shiny' && card.rarity !== 'Secret Rare';
           })
           .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false }));
 

@@ -19,7 +19,8 @@ export function openPack(allCards) {
   const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon' && !c.reverseHolo);
   const commons      = allCards.filter((c) => c.rarity === 'Common' && !c.reverseHolo);
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
-  const exCards      = allCards.filter((c) => c.rarity === 'Rare ex');
+  const exCards      = allCards.filter((c) => c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X');
+  const shinyCards   = allCards.filter((c) => c.rarity === 'Rare Shiny');
   const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
 
   // Sets with reverse holo cards (EX era+) get a dedicated reverse holo slot,
@@ -29,6 +30,11 @@ export function openPack(allCards) {
 
   const uncommonCards = pickRandom(uncommons, 3);
   const commonCards   = pickRandom(commons, hasRH ? 5 : 6);
+
+  // Shiny Pokémon: ~1-in-90 chance, rarer than Secret Rare, replaces the rare slot
+  if (shinyCards.length > 0 && Math.random() < 1 / 90) {
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(shinyCards, 1)];
+  }
 
   // Secret rare: ~1-in-45 chance, replaces the rare slot
   if (secretRares.length > 0 && Math.random() < 1 / 45) {
@@ -65,13 +71,19 @@ export function openPityPack(allCards) {
   const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon' && !c.reverseHolo);
   const commons      = allCards.filter((c) => c.rarity === 'Common' && !c.reverseHolo);
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
-  const exCards      = allCards.filter((c) => c.rarity === 'Rare ex');
+  const exCards      = allCards.filter((c) => c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X');
+  const shinyCards   = allCards.filter((c) => c.rarity === 'Rare Shiny');
   const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
 
   const hasRH     = reverseHolos.length > 0;
   const rhSlot    = hasRH ? pickRandom(reverseHolos, 1) : [];
   const uncommonCards = pickRandom(uncommons, 3);
   const commonCards   = pickRandom(commons, hasRH ? 5 : 6);
+
+  // Shiny Pokémon: same 1-in-90 chance
+  if (shinyCards.length > 0 && Math.random() < 1 / 90) {
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(shinyCards, 1)];
+  }
 
   // Secret Rare: same 1-in-45 chance
   if (secretRares.length > 0 && Math.random() < 1 / 45) {

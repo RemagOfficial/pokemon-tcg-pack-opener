@@ -29,10 +29,12 @@ const TYPE_COLORS = {
   Dragon:    '#0ea5e9',
   Fairy:     '#ec4899',
 };
-// Sort score: Secret Rare first, EX Pokemon next, then holo rares, non-holo rares, uncommons, commons
+// Sort score: Shiny first, then Secret Rare, EX/LV.X Pokemon, holo rares, non-holo rares, uncommons, commons
 const sortScore = (card) => {
+  if (card.rarity === 'Rare Shiny')                           return -1; // Shiny sub-set (rarest)
   if (card.rarity === 'Secret Rare')                          return 0; // Secret Rare
   if (card.rarity === 'Rare ex')                              return 1; // EX Pokemon
+  if (card.rarity === 'Rare LV.X')                           return 1; // LV.X Pokemon (same tier as EX)
   if (card.holo  && card.rarity === 'Rare')                  return 2; // holo rare
   if (card.reverseHolo && card.rarity === 'Rare')            return 3; // reverse holo rare
   if (!card.holo && !card.reverseHolo && card.rarity === 'Rare') return 4; // non-holo rare
@@ -125,12 +127,12 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
 
   // ── SET LIST VIEW ────────────────────────────────────────────────────────
   if (!activeSetId) {
-    const ownedOfficialBySet = {}; // excludes Secret Rare — used for bar fill + completion
-    const ownedTotalBySet = {};     // includes Secret Rare — used for the displayed count
+    const ownedOfficialBySet = {}; // excludes Secret Rare + Shiny — used for bar fill + completion
+    const ownedTotalBySet = {};     // includes Secret Rare + Shiny — used for the displayed count
     for (const card of collection) {
       const sid = card.setId ?? 'base1';
       ownedTotalBySet[sid] = (ownedTotalBySet[sid] ?? 0) + 1;
-      if (card.rarity === 'Secret Rare') continue;
+      if (card.rarity === 'Secret Rare' || card.rarity === 'Rare Shiny') continue;
       ownedOfficialBySet[sid] = (ownedOfficialBySet[sid] ?? 0) + 1;
     }
 
@@ -142,7 +144,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
       if (selYears.size  > 0 && !selYears.has(set.year))   return false;
       if (!hideComplete) return true;
       const owned = ownedOfficialBySet[set.id] ?? 0;
-      const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare').length) ?? set.totalCards;
+      const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length) ?? set.totalCards;
       return !(owned > 0 && owned >= total);
     });
 
@@ -236,7 +238,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
             )}
             {visibleSets.map((set) => {
               const owned = ownedOfficialBySet[set.id] ?? 0;
-              const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare').length) ?? set.totalCards;
+              const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length) ?? set.totalCards;
               const complete = owned > 0 && owned >= total;
               const pct = total > 0 ? Math.min((owned / total) * 100, 100) : 0;
               return (
@@ -284,11 +286,11 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
 
   // ── SET DETAIL VIEW ──────────────────────────────────────────────────────
   const setConfig = isFavouritesView ? null : SETS.find((s) => s.id === activeSetId);
-  // Exclude secret rares from the official total and completion count
+  // Exclude secret rares + shiny sub-set from the official total and completion count
   const setSize = checklistCards
-    ? checklistCards.filter((c) => c.rarity !== 'Secret Rare').length
+    ? checklistCards.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length
     : setConfig?.totalCards ?? 0;
-  const officialSetCards = activeSetCards.filter((c) => c.rarity !== 'Secret Rare');
+  const officialSetCards = activeSetCards.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny');
   const totalCards = activeSetCards.reduce((sum, c) => sum + (c.count ?? 1), 0);
 
   return (
@@ -366,6 +368,28 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                     Secret Rare
                     <span className="filter-tab__count">
                       {activeSetCards.filter((c) => c.rarity === 'Secret Rare').length}
+                    </span>
+                  </button>
+                )}
+                {activeSetCards.some((c) => c.rarity === 'Rare LV.X') && (
+                  <button
+                    className={`filter-tab${filter === 'Rare LV.X' ? ' filter-tab--active' : ''} filter-tab--rare-lvx`}
+                    onClick={() => setFilter('Rare LV.X')}
+                  >
+                    LV.X
+                    <span className="filter-tab__count">
+                      {activeSetCards.filter((c) => c.rarity === 'Rare LV.X').length}
+                    </span>
+                  </button>
+                )}
+                {activeSetCards.some((c) => c.rarity === 'Rare Shiny') && (
+                  <button
+                    className={`filter-tab${filter === 'Rare Shiny' ? ' filter-tab--active' : ''} filter-tab--rare-shiny`}
+                    onClick={() => setFilter('Rare Shiny')}
+                  >
+                    Shiny
+                    <span className="filter-tab__count">
+                      {activeSetCards.filter((c) => c.rarity === 'Rare Shiny').length}
                     </span>
                   </button>
                 )}
