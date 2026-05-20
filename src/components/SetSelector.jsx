@@ -16,6 +16,7 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
   const [showFilter, setShowFilter] = useState(false);
   const [selSeries,  setSelSeries]  = useState(new Set());
   const [selYears,   setSelYears]   = useState(new Set());
+  const [search, setSearch] = useState('');
   const popupRef = useRef(null);
 
   // Close popup on outside click
@@ -33,12 +34,17 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
   }, [showFilter]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return SETS.filter((s) => {
       if (selSeries.size > 0 && !selSeries.has(s.series)) return false;
       if (selYears.size  > 0 && !selYears.has(s.year))   return false;
+      if (q) {
+        const hay = `${s.name} ${s.series} ${s.year}`.toLowerCase();
+        return hay.includes(q);
+      }
       return true;
     });
-  }, [selSeries, selYears]);
+  }, [selSeries, selYears, search]);
 
   const activeCount = selSeries.size + selYears.size;
   const clearAll = () => { setSelSeries(new Set()); setSelYears(new Set()); };
@@ -48,8 +54,9 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
       <h2 className="set-selector__title">Choose a Set</h2>
       <p className="set-selector__sub">Select a booster pack to open</p>
 
-      {/* Filter bar */}
-      <div className="ss-filter-bar">
+      {/* Filter/search bar */}
+      <div className="set-selector__bar-row">
+        <div className="ss-filter-bar ss-filter-bar--fullwidth">
         <button
           className={`ss-filter-btn${activeCount > 0 ? ' ss-filter-btn--active' : ''}`}
           onClick={() => setShowFilter((v) => !v)}
@@ -58,8 +65,13 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
           <span>Filter</span>
           {activeCount > 0 && <span className="ss-filter-badge">{activeCount}</span>}
         </button>
-
-        {/* Active chips */}
+        <input
+          className="ss-search-input"
+          type="text"
+          placeholder="Search sets by name, series, or year..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
         {activeCount > 0 && (
           <div className="ss-chips">
             {[...selSeries].map((s) => (
@@ -75,8 +87,6 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
             <button className="ss-chip ss-chip--clear" onClick={clearAll}>Clear all</button>
           </div>
         )}
-
-        {/* Filter popup */}
         {showFilter && (
           <div className="ss-popup" ref={popupRef}>
             <div className="ss-popup__section">
@@ -118,6 +128,7 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Set grid */}

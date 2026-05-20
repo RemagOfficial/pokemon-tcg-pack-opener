@@ -3,6 +3,14 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.9.0',
+    date: '2026-05-20',
+    entries: [
+      'Set search bars added across list screens — Open Packs, Collection, and Achievements now support searching sets by name, series, or year',
+      'Collection filter update — Hide completed sets moved into the filter popup and now appears in active filter chips/badge count',
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-05-20',
     entries: [

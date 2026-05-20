@@ -7,8 +7,29 @@ import './Stats.css';
 // Build a lookup of set meta by id
 const SET_META = Object.fromEntries(SETS.map((s) => [s.id, s]));
 
+function getCachedSetCardName(setId, cardId) {
+  try {
+    const prefix = `pkmon_cache_set_${setId}_cards_`;
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(prefix)) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      const cards = parsed?.data;
+      if (!Array.isArray(cards)) continue;
+      const card = cards.find((c) => c.id === cardId || c.localId === cardId);
+      if (card?.name) return card.name;
+    }
+  } catch {
+    // Ignore malformed cache entries.
+  }
+  return null;
+}
+
 /** Find the most-pulled card in a pull map. Returns { name, count } or null. */
-function getMostPulled(cardPulls, loadedSets, setId) {
+function getMostPulled(setStats, loadedSets, setId) {
+  const cardPulls = setStats?.cardPulls;
   if (!cardPulls || Object.keys(cardPulls).length === 0) return null;
   let bestId = null;
   let bestCount = 0;
@@ -16,10 +37,15 @@ function getMostPulled(cardPulls, loadedSets, setId) {
     if (count > bestCount) { bestCount = count; bestId = id; }
   }
   if (!bestId) return null;
-  // Try to resolve card name from loaded set data
+
+  const storedName = setStats?.cardNames?.[bestId] ?? null;
   const setCards = loadedSets?.[setId];
-  const card = setCards?.find((c) => c.id === bestId);
-  const name = card?.name ?? bestId.split('-').slice(1).join('-') ?? bestId;
+  const card = setCards?.find((c) => c.id === bestId || c.localId === bestId);
+  const cachedName = getCachedSetCardName(setId, bestId);
+
+  const decoded = bestId.includes('-') ? bestId.split('-').slice(1).join('-') : bestId;
+  const safeFallback = decoded && /[a-z]/i.test(decoded) ? decoded : bestId;
+  const name = storedName ?? card?.name ?? cachedName ?? safeFallback;
   return { name, count: bestCount };
 }
 
@@ -42,7 +68,7 @@ export default function Stats({ loadedSets = {} }) {
       const packsOpened = setStats?.packsOpened ?? 0;
       const packsToComplete = setStats?.packsAtCompletion ?? null;
       const mostPulled = packsOpened > 0
-        ? getMostPulled(setStats?.cardPulls, loadedSets, setId)
+        ? getMostPulled(setStats, loadedSets, setId)
         : null;
       return { setId, meta, packsOpened, packsToComplete, mostPulled };
     }).filter(Boolean);

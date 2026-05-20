@@ -4,8 +4,9 @@
  * Stored in localStorage under 'pkmon_stats':
  * {
  *   [setId]: {
- *     packsOpened: number,          // total packs opened for this set
- *     cardPulls: { [cardId]: number } // how many times each card was pulled
+ *     packsOpened: number,            // total packs opened for this set
+ *     cardPulls: { [cardId]: number },// how many times each card was pulled
+ *     cardNames: { [cardId]: string } // latest known name for each pulled card id
  *   }
  * }
  */
@@ -30,10 +31,15 @@ function save(data) {
 /** Record a full pack being opened for a set, with the cards that were pulled. */
 export function recordPackOpened(setId, cards) {
   const data = load();
-  if (!data[setId]) data[setId] = { packsOpened: 0, cardPulls: {} };
+  if (!data[setId]) data[setId] = { packsOpened: 0, cardPulls: {}, cardNames: {} };
+  if (!data[setId].cardPulls) data[setId].cardPulls = {};
+  if (!data[setId].cardNames) data[setId].cardNames = {};
   data[setId].packsOpened += 1;
   for (const card of cards) {
     data[setId].cardPulls[card.id] = (data[setId].cardPulls[card.id] ?? 0) + 1;
+    if (typeof card.name === 'string' && card.name.length > 0) {
+      data[setId].cardNames[card.id] = card.name;
+    }
   }
   save(data);
 }
@@ -60,7 +66,9 @@ export function resetStats() {
  */
 export function recordSetCompletion(setId) {
   const data = load();
-  if (!data[setId]) data[setId] = { packsOpened: 0, cardPulls: {} };
+  if (!data[setId]) data[setId] = { packsOpened: 0, cardPulls: {}, cardNames: {} };
+  if (!data[setId].cardPulls) data[setId].cardPulls = {};
+  if (!data[setId].cardNames) data[setId].cardNames = {};
   if (data[setId].packsAtCompletion == null) {
     data[setId].packsAtCompletion = data[setId].packsOpened;
     save(data);

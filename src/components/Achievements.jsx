@@ -28,6 +28,7 @@ export default function Achievements({ collection, allCards, economyMode = false
   const [showFilter, setShowFilter] = useState(false);
   const [selSeries, setSelSeries] = useState(new Set());
   const [selYears,  setSelYears]  = useState(new Set());
+  const [search, setSearch] = useState("");
   const filterPopupRef = useRef(null);
 
   useEffect(() => {
@@ -49,71 +50,85 @@ export default function Achievements({ collection, allCards, economyMode = false
   );
 
   // ── Set list view ────────────────────────────────────────────────────────
-  if (!activeSet) {
-    const activeFilterCount = selSeries.size + selYears.size;
-    const clearAllFilters = () => { setSelSeries(new Set()); setSelYears(new Set()); };
-    const setMeta = Object.fromEntries(SETS.map((s) => [s.id, s]));
-    const visibleAchSets = ACHIEVEMENT_SETS.filter((set) => {
-      const meta = setMeta[set.tcgdexId];
-      if (!meta) return true;
-      if (selSeries.size > 0 && !selSeries.has(meta.series)) return false;
-      if (selYears.size  > 0 && !selYears.has(meta.year))   return false;
-      return true;
-    });
+  const activeFilterCount = selSeries.size + selYears.size;
+  const clearAllFilters = () => { setSelSeries(new Set()); setSelYears(new Set()); };
+  const setMeta = Object.fromEntries(SETS.map((s) => [s.id, s]));
+  const visibleAchSets = ACHIEVEMENT_SETS.filter((set) => {
+    const meta = setMeta[set.tcgdexId];
+    if (!meta) return true;
+    if (selSeries.size > 0 && !selSeries.has(meta.series)) return false;
+    if (selYears.size  > 0 && !selYears.has(meta.year))   return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const hay = `${set.name} ${meta.series} ${meta.year}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
 
+  if (!activeSet) {
     return (
       <div className="ach-screen">
         <h2 className="ach-screen__title">Achievements</h2>
-
-        <div className="ss-filter-bar">
-          <button
-            className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
-            onClick={() => setShowFilter((v) => !v)}
-            aria-expanded={showFilter}
-          >
-            <span>Filter</span>
-            {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
-          </button>
-          {activeFilterCount > 0 && (
-            <div className="ss-chips">
-              {[...selSeries].map((s) => (
-                <button key={s} className="ss-chip" onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s} &times;</button>
-              ))}
-              {[...selYears].map((y) => (
-                <button key={y} className="ss-chip" onClick={() => setSelYears(toggleSet(selYears, y))}>{y} &times;</button>
-              ))}
-              <button className="ss-chip ss-chip--clear" onClick={clearAllFilters}>Clear all</button>
-            </div>
-          )}
-          {showFilter && (
-            <div className="ss-popup" ref={filterPopupRef}>
-              <div className="ss-popup__section">
-                <span className="ss-popup__label">Series</span>
-                <div className="ss-popup__options">
-                  {ALL_SERIES.map((s) => (
-                    <button key={s} className={`ss-option${selSeries.has(s) ? ' ss-option--on' : ''}`} onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s}</button>
-                  ))}
-                </div>
+        <div className="ach-bar-row">
+          <div className="ss-filter-bar ss-filter-bar--fullwidth">
+            <button
+              className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
+              onClick={() => setShowFilter((v) => !v)}
+              aria-expanded={showFilter}
+              style={{ marginRight: 8 }}
+            >
+              <span>Filter</span>
+              {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
+            </button>
+            <input
+              className="ss-search-input"
+              type="text"
+              placeholder="Search sets by name, series, or year..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            {activeFilterCount > 0 && (
+              <div className="ss-chips">
+                {[...selSeries].map((s) => (
+                  <button key={s} className="ss-chip" onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s} &times;</button>
+                ))}
+                {[...selYears].map((y) => (
+                  <button key={y} className="ss-chip" onClick={() => setSelYears(toggleSet(selYears, y))}>{y} &times;</button>
+                ))}
+                <button className="ss-chip ss-chip--clear" onClick={clearAllFilters}>Clear all</button>
               </div>
-              <div className="ss-popup__divider" />
-              <div className="ss-popup__section">
-                <span className="ss-popup__label">Year</span>
-                <div className="ss-popup__options ss-popup__options--years">
-                  {ALL_YEARS.map((y) => (
-                    <button key={y} className={`ss-option${selYears.has(y) ? ' ss-option--on' : ''}`} onClick={() => setSelYears(toggleSet(selYears, y))}>{y}</button>
-                  ))}
+            )}
+            {showFilter && (
+              <div className="ss-popup" ref={filterPopupRef}>
+                <div className="ss-popup__section">
+                  <span className="ss-popup__label">Series</span>
+                  <div className="ss-popup__options">
+                    {ALL_SERIES.map((s) => (
+                      <button key={s} className={`ss-option${selSeries.has(s) ? ' ss-option--on' : ''}`} onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s}</button>
+                    ))}
+                  </div>
                 </div>
+                <div className="ss-popup__divider" />
+                <div className="ss-popup__section">
+                  <span className="ss-popup__label">Year</span>
+                  <div className="ss-popup__options ss-popup__options--years">
+                    {ALL_YEARS.map((y) => (
+                      <button key={y} className={`ss-option${selYears.has(y) ? ' ss-option--on' : ''}`} onClick={() => setSelYears(toggleSet(selYears, y))}>{y}</button>
+                    ))}
+                  </div>
+                </div>
+                {activeFilterCount > 0 && (
+                  <>
+                    <div className="ss-popup__divider" />
+                    <button className="ss-popup__clear" onClick={() => { clearAllFilters(); setShowFilter(false); }}>Clear all filters</button>
+                  </>
+                )}
               </div>
-              {activeFilterCount > 0 && (
-                <>
-                  <div className="ss-popup__divider" />
-                  <button className="ss-popup__clear" onClick={() => { clearAllFilters(); setShowFilter(false); }}>Clear all filters</button>
-                </>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
-
         <div className="ach-set-list">
           {visibleAchSets.map((set) => {
             const total    = set.achievements.length;
@@ -151,14 +166,12 @@ export default function Achievements({ collection, allCards, economyMode = false
 
   // ── Set detail view ──────────────────────────────────────────────────────
   const set = ACHIEVEMENT_SETS.find((s) => s.id === activeSet);
-
   return (
     <div className="ach-screen">
       <div className="ach-detail-header">
         <button className="ach-back-btn" onClick={() => setActiveSet(null)}>‹ Back</button>
         <h2 className="ach-screen__title">{set.name}</h2>
       </div>
-
       <div className="ach-list">
         {set.achievements.map((ach) => {
           const prog = progress.get(ach.id) ?? { total: 0, owned: 0, complete: false };
