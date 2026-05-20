@@ -24,7 +24,7 @@
 .set-selector {
   --ss-card-size: 160px;
   --ss-grid-gap: 18px;
-  --ss-columns: 4;
+  --ss-columns: 6;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -220,11 +220,23 @@
   padding: 40px 0;
 }
 
-/* ── 4-column grid ── */
+/* ── Responsive grid (6-column desktop) ── */
 .set-selector__grid {
   display: grid;
   grid-template-columns: repeat(var(--ss-columns), var(--ss-card-size));
   gap: var(--ss-grid-gap);
+}
+
+@media (max-width: 1120px) {
+  .set-selector {
+    --ss-columns: 5;
+  }
+}
+
+@media (max-width: 940px) {
+  .set-selector {
+    --ss-columns: 4;
+  }
 }
 
 @media (max-width: 760px) {
