@@ -3,6 +3,20 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.6.0',
+    date: '2026-05-20',
+    entries: [
+      'Onboarding tutorial — 6-slide guide shown on first load with animated previews; final slide lets you pick Sandbox or Economy mode before starting',
+      'Pity system (Economy mode) — guaranteed holo after 10 packs in a row without a hit; a pip meter below the pack shows your progress',
+      'Economy rebalance — sell prices now scale with each set\'s pack price, ensuring a worst-case pack always recoups its cost; holos and reverse holos fetch a bonus',
+      'Energy-type filter — chip row in the Collection screen lets you filter cards by type (Fire, Water, Grass, etc.)',
+      'Secret Rare filter tab — appears in Collection only for sets that contain Secret Rares; Secret Rares sort to the top of the grid',
+      'Achievement toasts — tiered visual notifications (Common / Uncommon / Rare / Holo) replace the old blocking modal; Holo tier includes confetti',
+      'Secret Rare reveal animation — shake buildup before flip, bounce-toward-viewer scale on reveal with crimson glow',
+      'Fixed: achievement icons corrupted for all pre-EX sets',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-05-19',
     entries: [

@@ -52,3 +52,38 @@ export function openPack(allCards) {
   // Order: commons at the bottom, uncommons in the middle, [reverse holo], rare on top
   return [...commonCards, ...uncommonCards, ...rhSlot, ...rareCard];
 }
+
+/**
+ * Pity pack — identical to openPack except the rare slot is guaranteed to be
+ * at minimum a holo rare. EX Pokémon and Secret Rare still use their normal
+ * probabilities so they can still appear (and because holos are now the floor
+ * rather than one option among rares, effective pull rates feel higher).
+ */
+export function openPityPack(allCards) {
+  const holoRares    = allCards.filter((c) => c.holo === true && !c.reverseHolo);
+  const rares        = allCards.filter((c) => c.rarity === 'Rare' && !c.holo && !c.reverseHolo);
+  const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon' && !c.reverseHolo);
+  const commons      = allCards.filter((c) => c.rarity === 'Common' && !c.reverseHolo);
+  const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
+  const exCards      = allCards.filter((c) => c.rarity === 'Rare ex');
+  const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
+
+  const hasRH     = reverseHolos.length > 0;
+  const rhSlot    = hasRH ? pickRandom(reverseHolos, 1) : [];
+  const uncommonCards = pickRandom(uncommons, 3);
+  const commonCards   = pickRandom(commons, hasRH ? 5 : 6);
+
+  // Secret Rare: same 1-in-45 chance
+  if (secretRares.length > 0 && Math.random() < 1 / 45) {
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(secretRares, 1)];
+  }
+
+  // EX Pokémon: same 1-in-9 chance
+  if (exCards.length > 0 && Math.random() < 1 / 9) {
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(exCards, 1)];
+  }
+
+  // Guaranteed holo (fall back to non-holo rares only if the set has none)
+  const pool = holoRares.length > 0 ? holoRares : rares;
+  return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(pool, 1)];
+}

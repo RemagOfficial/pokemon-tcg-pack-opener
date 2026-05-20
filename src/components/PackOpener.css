@@ -794,6 +794,69 @@
   vertical-align: middle;
 }
 
+/* Pity-triggered glow on the Open Pack button */
+.btn-open--pity {
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.7), 0 6px 28px rgba(245, 158, 11, 0.45) !important;
+  animation: pity-btn-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pity-btn-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(245,158,11,0.7), 0 6px 28px rgba(245,158,11,0.45); }
+     50%   { box-shadow: 0 0 0 4px rgba(245,158,11,0.4), 0 8px 36px rgba(245,158,11,0.25); }
+}
+
+/* ── Pity meter ───────────────────────────────────────────────── */
+.pity-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.pity-meter__pips {
+  display: flex;
+  gap: 4px;
+}
+
+.pity-pip {
+  width: 18px;
+  height: 5px;
+  border-radius: 3px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.pity-pip--filled {
+  background: #f97316;
+  border-color: #f97316;
+}
+
+.pity-meter--ready .pity-pip {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.6);
+}
+
+.pity-meter__label {
+  font-size: 0.7rem;
+  color: #475569;
+  letter-spacing: 0.02em;
+}
+
+.pity-meter__label--ready {
+  color: #f59e0b;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  animation: pity-label-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pity-label-pulse {
+  0%, 100% { opacity: 1; }
+     50%   { opacity: 0.65; }
+}
+
 /* ── Economy summary ──────────────────────────────────────────── */
 .summary-card--sold {
   opacity: 0.45;

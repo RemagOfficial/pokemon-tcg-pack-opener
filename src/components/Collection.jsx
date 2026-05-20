@@ -15,17 +15,32 @@ function toggleSet(set, value) {
 }
 
 const RARITIES = ['All', 'Holo', 'EX', 'Rare', 'Uncommon', 'Common'];
-// Sort score: EX Pokemon first, then holo rares, non-holo rares, uncommons, commons
+
+const TYPE_COLORS = {
+  Fire:      '#ef4444',
+  Water:     '#3b82f6',
+  Grass:     '#22c55e',
+  Lightning: '#eab308',
+  Fighting:  '#ea580c',
+  Psychic:   '#a855f7',
+  Colorless: '#94a3b8',
+  Darkness:  '#475569',
+  Metal:     '#9ca3af',
+  Dragon:    '#0ea5e9',
+  Fairy:     '#ec4899',
+};
+// Sort score: Secret Rare first, EX Pokemon next, then holo rares, non-holo rares, uncommons, commons
 const sortScore = (card) => {
-  if (card.rarity === 'Rare ex')                              return 0; // EX Pokemon
-  if (card.holo  && card.rarity === 'Rare')                  return 1; // holo rare
-  if (card.reverseHolo && card.rarity === 'Rare')            return 2; // reverse holo rare
-  if (!card.holo && !card.reverseHolo && card.rarity === 'Rare') return 3; // non-holo rare
-  if (card.reverseHolo)                                      return 4; // reverse holo (non-rare)
-  if (card.holo)                                             return 5; // holo non-rare (edge case)
-  if (card.rarity === 'Uncommon')                            return 6;
-  if (card.rarity === 'Common')                              return 7;
-  return 8;
+  if (card.rarity === 'Secret Rare')                          return 0; // Secret Rare
+  if (card.rarity === 'Rare ex')                              return 1; // EX Pokemon
+  if (card.holo  && card.rarity === 'Rare')                  return 2; // holo rare
+  if (card.reverseHolo && card.rarity === 'Rare')            return 3; // reverse holo rare
+  if (!card.holo && !card.reverseHolo && card.rarity === 'Rare') return 4; // non-holo rare
+  if (card.reverseHolo)                                      return 5; // reverse holo (non-rare)
+  if (card.holo)                                             return 6; // holo non-rare (edge case)
+  if (card.rarity === 'Uncommon')                            return 7;
+  if (card.rarity === 'Common')                              return 8;
+  return 9;
 };
 
 export default function Collection({ collection, loadedSets = {}, setSymbols = {}, onLoadSet, economyMode = false, onSellCard, getCardSellPrice }) {
@@ -50,6 +65,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
     };
   }, [showFilter]);
   const [sortBy, setSortBy] = useState('rarity'); // 'rarity' | 'count'
+  const [filterType, setFilterType] = useState(null); // null = all types
   const [viewMode, setViewMode] = useState('collection');
   const [modalCard, setModalCard] = useState(null);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(false);
@@ -75,19 +91,30 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
   const activeSetCards = isFavouritesView ? activeFavCards : setCards;
 
   // Filtered + sorted cards for My Cards view
+  const availableTypes = useMemo(() => {
+    const typeSet = new Set();
+    for (const card of activeSetCards) {
+      if (card.types?.length) card.types.forEach((t) => typeSet.add(t));
+    }
+    return [...typeSet].sort();
+  }, [activeSetCards]);
+
   const displayed = useMemo(() => {
     let base;
     if (filter === 'All')  base = activeSetCards;
     else if (filter === 'Holo') base = activeSetCards.filter((c) => c.holo === true || c.reverseHolo === true);
     else if (filter === 'EX')   base = activeSetCards.filter((c) => c.rarity === 'Rare ex');
     else base = activeSetCards.filter((c) => c.rarity === filter);
+    if (filterType !== null) {
+      base = base.filter((c) => c.types?.includes(filterType));
+    }
     return [...base].sort((a, b) => {
       if (sortBy === 'count') {
         return (b.count ?? 1) - (a.count ?? 1) || sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
       }
       return sortScore(a) - sortScore(b) || a.name.localeCompare(b.name);
     });
-  }, [activeSetCards, filter, sortBy]);
+  }, [activeSetCards, filter, sortBy, filterType]);
 
   // Full checklist cards for active set
   const checklistCards = useMemo(() => {
@@ -189,7 +216,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
               <button
                 className="coll-set-card coll-set-card--favourites"
                 style={{ '--accent': '#f43f5e' }}
-                onClick={() => { setActiveSetId('__favourites__'); setFilter('All'); setViewMode('collection'); }}
+                onClick={() => { setActiveSetId('__favourites__'); setFilter('All'); setFilterType(null); setViewMode('collection'); }}
               >
                 <div className="coll-set-card__symbol-wrap">
                   <span className="coll-set-card__symbol">&#x2665;</span>
@@ -220,6 +247,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                   onClick={() => {
                     setActiveSetId(set.id);
                     setFilter('All');
+                    setFilterType(null);
                     setViewMode('collection');
                   }}
                 >
@@ -269,7 +297,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
       {/* ── Header ── */}
       <div className="collection__header">
         <div className="collection__header-top">
-          <button className="coll-back-btn" onClick={() => setActiveSetId(null)}>‹ Back</button>
+          <button className="coll-back-btn" onClick={() => { setActiveSetId(null); setFilterType(null); }}>‹ Back</button>
 
           <div className="collection__stats">
             {viewMode === 'collection' ? (
@@ -330,6 +358,17 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                     )}
                   </button>
                 ))}
+                {activeSetCards.some((c) => c.rarity === 'Secret Rare') && (
+                  <button
+                    className={`filter-tab${filter === 'Secret Rare' ? ' filter-tab--active' : ''} filter-tab--secret-rare`}
+                    onClick={() => setFilter('Secret Rare')}
+                  >
+                    Secret Rare
+                    <span className="filter-tab__count">
+                      {activeSetCards.filter((c) => c.rarity === 'Secret Rare').length}
+                    </span>
+                  </button>
+                )}
               </div>
               <div className="collection__sort-toggle" role="group" aria-label="Sort order">
                 <button
@@ -361,6 +400,27 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
                 </button>
               </div>
             )}
+            {availableTypes.length > 0 && (
+              <div className="collection__type-filter" role="group" aria-label="Filter by type">
+                <button
+                  className={`type-chip${filterType === null ? ' type-chip--active' : ''}`}
+                  onClick={() => setFilterType(null)}
+                >
+                  All Types
+                </button>
+                {availableTypes.map((type) => (
+                  <button
+                    key={type}
+                    className={`type-chip${filterType === type ? ' type-chip--active' : ''}`}
+                    style={{ '--type-color': TYPE_COLORS[type] ?? '#94a3b8' }}
+                    onClick={() => setFilterType(filterType === type ? null : type)}
+                  >
+                    <span className="type-chip__dot" />
+                    {type}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -374,7 +434,7 @@ export default function Collection({ collection, loadedSets = {}, setSymbols = {
             <p>{isFavouritesView ? 'Open a card and tap ♡ to favourite it.' : 'Open a pack to start collecting!'}</p>
           </div>
         ) : displayed.length === 0 ? (
-          <p className="collection__none">No {filter} cards yet.</p>
+          <p className="collection__none">No {filterType ? `${filterType}-type` : filter} cards yet.</p>
         ) : (
           <div className="collection__grid">
             {displayed.map((card) => (

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { openPack } from '../services/packLogic.js';
+import { openPack, openPityPack } from '../services/packLogic.js';
+import { PITY_THRESHOLD } from '../services/pity.js';
 import { recordPackOpened } from '../services/stats.js';
 import { getCardImageUrl } from '../services/tcgdex.js';
 import CardModal from './CardModal.jsx';
@@ -44,6 +45,8 @@ export default function PackOpener({
   freePacks = 0, onUseFreePack,
   // Dev mode
   forcedPack = null, onPackUsed,
+  // Pity system (economy mode)
+  pityCount = 0, onPityUpdate,
 }) {
   const [phase,        setPhase]        = useState('idle');
   const [packCards,    setPackCards]    = useState([]);
@@ -133,8 +136,16 @@ export default function PackOpener({
     setSoldIndices(new Set());
     clearTimers();
     preOpenCollectionRef.current = new Set(collectionRef.current.map((c) => c.id));
-    const drawn = forcedPack ?? openPack(cards);
+    const isPityPack = economyMode && !forcedPack && pityCount >= PITY_THRESHOLD;
+    const drawn = forcedPack ?? (isPityPack ? openPityPack(cards) : openPack(cards));
     if (forcedPack) onPackUsed?.();
+    // Update pity counter: hit = holo, EX, or Secret Rare in the drawn pack
+    if (economyMode && !forcedPack) {
+      const hasHit = drawn.some(
+        (c) => c.holo === true || c.rarity === 'Rare ex' || c.rarity === 'Secret Rare'
+      );
+      onPityUpdate?.(hasHit);
+    }
     packCardsRef.current = drawn;
     if (setId) recordPackOpened(setId, drawn);
     setPackCards(drawn);
@@ -142,7 +153,7 @@ export default function PackOpener({
     setCardState('facedown');
     setPhase('opening');
     openingTimerRef.current = setTimeout(() => setPhase('revealing'), 700);
-  }, [cards, clearTimers, economyMode, onBuyPack, onUseFreePack]);
+  }, [cards, clearTimers, economyMode, onBuyPack, onUseFreePack, pityCount, onPityUpdate]);
 
   const handleSkipToSummary = useCallback(() => {
     clearTimers();
@@ -210,7 +221,7 @@ export default function PackOpener({
           {economyMode ? (
             <>
               <button
-                className={`btn-open${freePacks > 0 ? ' btn-open--free' : ''}`}
+                className={`btn-open${freePacks > 0 ? ' btn-open--free' : ''}${pityCount >= PITY_THRESHOLD ? ' btn-open--pity' : ''}`}
                 onClick={() => handleOpenPack(freePacks > 0)}
                 disabled={freePacks === 0 && coins < packPrice}
               >
@@ -236,6 +247,21 @@ export default function PackOpener({
                   🪙 Flip a Coin for a Free Pack
                 </button>
               )}
+              {/* Pity meter */}
+              <div className={`pity-meter${pityCount >= PITY_THRESHOLD ? ' pity-meter--ready' : ''}`}>
+                <div className="pity-meter__pips">
+                  {Array.from({ length: PITY_THRESHOLD }, (_, i) => (
+                    <div key={i} className={`pity-pip${i < pityCount ? ' pity-pip--filled' : ''}`} />
+                  ))}
+                </div>
+                {pityCount >= PITY_THRESHOLD ? (
+                  <span className="pity-meter__label pity-meter__label--ready">✦ Holo Guaranteed!</span>
+                ) : pityCount > 0 ? (
+                  <span className="pity-meter__label">{pityCount}/{PITY_THRESHOLD} packs without a hit</span>
+                ) : (
+                  <span className="pity-meter__label">Pity meter — holo guaranteed at 10</span>
+                )}
+              </div>
             </>
           ) : (
             <button className="btn-open" onClick={handleOpenPack}>

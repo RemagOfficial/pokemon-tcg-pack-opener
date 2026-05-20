@@ -5,7 +5,7 @@ import { getSetConfig, inferRarity } from './sets.js';
 const sdk = new TCGdex('en');
 
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days - WotC sets never change
-const CACHE_VERSION = 'v7'; // bump when card shape changes to invalidate old caches
+const CACHE_VERSION = 'v8'; // bump when card shape changes to invalidate old caches
 
 /**
  * Normalise a TCGdex rarity string to one of: Common | Uncommon | Rare | Secret Rare
@@ -19,7 +19,7 @@ function normalizeRarity(r) {
 
 /**
  * Fetch the variant flags and API rarity for a single card, cached per card.
- * Returns { holo: bool, normal: bool, apiRarity: string|null } or null on failure.
+ * Returns { holo: bool, normal: bool, apiRarity: string|null, types: string[]|null } or null on failure.
  */
 async function fetchCardVariants(cardId) {
   const cacheKey = `cv2_${cardId}`;
@@ -34,6 +34,7 @@ async function fetchCardVariants(cardId) {
       normal:    v ? !!v.normal  : true,
       reverse:   v ? !!v.reverse : false,
       apiRarity: detail?.rarity ?? null,
+      types:     detail?.types  ?? null,
     };
     cacheSet(cacheKey, result, CACHE_TTL);
     return result;
@@ -184,7 +185,7 @@ export async function loadSetCards(setId) {
       }
     }
 
-    return { ...card, rarity, holo: isHolo, image };
+    return { ...card, rarity, holo: isHolo, image, types: vd?.types ?? null };
   });
 
   // Step 6: generate reverse holo entries for cards that have a reverse variant.
@@ -238,7 +239,7 @@ export async function loadSetCards(setId) {
             rarity = 'Secret Rare';
           }
           const isHolo = vd !== null ? vd.holo === true : false;
-          return { ...card, rarity, holo: isHolo };
+          return { ...card, rarity, holo: isHolo, types: vd?.types ?? null };
         });
 
         // Reverse holos for merge cards

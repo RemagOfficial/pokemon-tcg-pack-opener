@@ -32,24 +32,39 @@ export const PACK_PRICES = (() => {
 export const STARTING_BALANCE = PACK_PRICES['base1'] * 3; // 300 coins
 
 // Fraction of pack price returned when selling a card.
-// Holo cards earn a 50% bonus on top of their rarity base value.
+//
+// Designed so that selling ALL cards from a worst-case pack (non-holo rare)
+// returns exactly the pack price — i.e. the player always breaks even.
+//
+// WotC-era pack: 6 commons + 3 uncommons + 1 rare (no RH slot)
+//   6×0.06 + 3×0.12 + 0.28 = 0.36 + 0.36 + 0.28 = 1.00  ✓
+//
+// EX-era pack:  5 commons + 3 uncommons + 1 reverse holo + 1 rare (RH slot)
+//   5×0.06 + 3×0.12 + 0.06×1.25 (min RH) + 0.28 ≈ 1.01  ✓
+//
+// Holo rares and above earn a bonus so the player profits on premium pulls.
 const RARITY_SELL_FACTOR = {
-  'Common':      0.05,
-  'Uncommon':    0.10,
-  'Rare':        0.25,
+  'Common':      0.06,
+  'Uncommon':    0.12,
+  'Rare':        0.28,
   'Rare ex':     0.60,
   'Secret Rare': 1.00,
 };
-const HOLO_SELL_MULTIPLIER = 1.5;
+const HOLO_SELL_MULTIPLIER         = 1.5;   // full holo treatment
+const REVERSE_HOLO_SELL_MULTIPLIER = 1.25;  // reverse holo treatment
 
 /**
  * Returns the coin value for selling a single duplicate card.
- * @param {object} card  - card object with `rarity` and `holo` fields
+ * @param {object} card  - card object with `rarity`, `holo`, and `reverseHolo` fields
  * @param {string} setId - the set the card belongs to
  */
 export function getSellPrice(card, setId) {
   const packPrice  = PACK_PRICES[setId] ?? PACK_PRICES['base1'];
-  const baseFactor = RARITY_SELL_FACTOR[card.rarity] ?? 0.05;
-  const factor     = card.holo ? baseFactor * HOLO_SELL_MULTIPLIER : baseFactor;
-  return Math.max(1, Math.floor(packPrice * factor));
+  const baseFactor = RARITY_SELL_FACTOR[card.rarity] ?? 0.06;
+  let factor = baseFactor;
+  if (card.holo)             factor = baseFactor * HOLO_SELL_MULTIPLIER;
+  else if (card.reverseHolo) factor = baseFactor * REVERSE_HOLO_SELL_MULTIPLIER;
+  // Math.ceil ensures that 6 commons + 3 uncommons + 1 non-holo rare always
+  // sums to at least the pack price (verified across every set in SET_ORDER).
+  return Math.max(1, Math.ceil(packPrice * factor));
 }

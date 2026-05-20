@@ -21,6 +21,8 @@ export default function DevPanel({
   currentSetName,
   onClearAchievements,
   onAwardFreePacks,
+  onReopenTutorial,
+  onMaxPity,
 }) {
   const [tab, setTab]           = useState('toasts');
   const [cardFilter, setCardFilter] = useState('');
@@ -202,6 +204,14 @@ export default function DevPanel({
                 🎁 Award {n} free pack{n !== 1 ? 's' : ''}
               </button>
             ))}
+            <button className="dev-btn dev-btn--wide" onClick={onMaxPity}>
+              ✦ Fill Pity Meter (→ 10/10)
+            </button>
+            <div className="dev-divider" />
+            <p className="dev-label">Tutorial</p>
+            <button className="dev-btn dev-btn--wide" onClick={onReopenTutorial}>
+              📖 Reopen Tutorial
+            </button>
           </div>
         )}
 

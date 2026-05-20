@@ -16,6 +16,7 @@ import Settings from './components/Settings.jsx';
 import CoinFlip from './components/CoinFlip.jsx';
 import AchToast from './components/AchToast.jsx';
 import DevPanel from './components/DevPanel.jsx';
+import Tutorial from './components/Tutorial.jsx';
 import './App.css';
 
 // Persist + restore the last-selected set id
@@ -136,6 +137,23 @@ export default function App() {
     [collection],
   );
 
+  // ── Pity counters (economy mode) ──────────────────────────────────────────
+  const [pityCounters, setPityCounters] = useState(() => {
+    try {
+      const raw = localStorage.getItem('pkmon_pity');
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+
+  const handlePityUpdate = useCallback((hasHit) => {
+    if (!selectedSetId) return;
+    setPityCounters((prev) => {
+      const next = { ...prev, [selectedSetId]: hasHit ? 0 : (prev[selectedSetId] ?? 0) + 1 };
+      try { localStorage.setItem('pkmon_pity', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, [selectedSetId]);
+
   // Sets the player already has cards from that are also currently loaded
   const eligibleFlipSets = useMemo(() => {
     if (!economyMode) return [];
@@ -143,12 +161,14 @@ export default function App() {
   }, [economyMode, loadedSets, collection]);
 
   const hasDuplicates = useMemo(() => collection.some((c) => c.count > 1), [collection]);
+  const hasFreePacksAny = useMemo(() => Object.values(freePacks).some((v) => v > 0), [freePacks]);
 
-  // "Truly broke": can't afford even the cheapest pack and nothing to sell
+  // "Truly broke": can't afford even the cheapest pack, nothing to sell, and no free packs
   const canCoinFlip = economyMode
     && eligibleFlipSets.length > 0
     && coins < PACK_PRICES['base1']
-    && !hasDuplicates;
+    && !hasDuplicates
+    && !hasFreePacksAny;
 
   // ── Set completion reward ──────────────────────────────────────────────────
   // Tracks per-set owned counts so the modal fires only on the transition
@@ -237,9 +257,27 @@ export default function App() {
     try { localStorage.removeItem('pkmon_claimed_ach'); } catch { /* ignore */ }
     try { localStorage.removeItem('pkmon_favourites'); } catch { /* ignore */ }
     try { localStorage.removeItem('pkmon_showcase'); } catch { /* ignore */ }
+    setPityCounters({});
+    try { localStorage.removeItem('pkmon_pity'); } catch { /* ignore */ }
     resetStats();
     prevOwnedPerSet.current = {};
   }, [resetCollection, resetCoins]);
+
+  // ── Tutorial ───────────────────────────────────────────────────────────────
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return !localStorage.getItem('pkmon_tutorial_done'); } catch { return true; }
+  });
+
+  const handleTutorialDone = useCallback((chosenMode) => {
+    setShowTutorial(false);
+    if (chosenMode) handleModeChange(chosenMode);
+    try { localStorage.setItem('pkmon_tutorial_done', '1'); } catch { /* ignore */ }
+  }, [handleModeChange]);
+
+  const handleReopenTutorial = useCallback(() => {
+    setShowTutorial(true);
+    try { localStorage.removeItem('pkmon_tutorial_done'); } catch { /* ignore */ }
+  }, []);
 
   // ── Developer mode ────────────────────────────────────────────────────────
   // Hidden panel — toggle with Ctrl+Shift+D
@@ -417,6 +455,8 @@ export default function App() {
                 onUseFreePack={() => consumeFreePack(selectedSetId)}
                 forcedPack={forcedPack}
                 onPackUsed={() => setForcedPack(null)}
+                pityCount={economyMode ? (pityCounters[selectedSetId] ?? 0) : 0}
+                onPityUpdate={handlePityUpdate}
               />
             )}
           </>
@@ -497,8 +537,18 @@ export default function App() {
         currentSetName={currentSetConfig?.name}
         onClearAchievements={devClearAchievements}
         onAwardFreePacks={devAwardFreePacks}
+        onReopenTutorial={handleReopenTutorial}
+        onMaxPity={() => {
+          if (!selectedSetId) return;
+          setPityCounters((prev) => {
+            const next = { ...prev, [selectedSetId]: 10 };
+            try { localStorage.setItem('pkmon_pity', JSON.stringify(next)); } catch { /* ignore */ }
+            return next;
+          });
+        }}
       />
     )}
+    {showTutorial && <Tutorial onDone={handleTutorialDone} />}
     </>
   );
 }
