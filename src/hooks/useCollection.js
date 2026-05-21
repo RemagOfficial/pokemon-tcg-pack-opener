@@ -3,7 +3,27 @@ import { rollGrade } from '../services/grading.js';
 
 function isMegaExName(name) {
   if (!name) return false;
-  return /^M[\s-].*(?:\s|-)ex(?:\s|$)/i.test(name);
+  return /^(?:M|Mega)[\s-].*(?:\s|-)ex(?:\s|$)/i.test(name);
+}
+
+function isGxName(name) {
+  if (!name) return false;
+  return /(?:\s|-)gx(?:\s|$)/i.test(name);
+}
+
+function isVmaxName(name) {
+  if (!name) return false;
+  return /(?:\s|-)vmax(?:\s|$)/i.test(name);
+}
+
+function isVstarName(name) {
+  if (!name) return false;
+  return /(?:\s|-)vstar(?:\s|$)/i.test(name);
+}
+
+function isVName(name) {
+  if (!name) return false;
+  return /(?:\s|-)v(?:\s|$)/i.test(name) && !isVmaxName(name) && !isVstarName(name);
 }
 
 function isExFamilyCard(card) {
@@ -18,7 +38,11 @@ function getExVariantKey(card) {
   const name = String(card.name ?? '').trim().toLowerCase();
   const localId = String(card.localId ?? '').replace(/[a-z]+$/i, '');
   const mega = card.megaEx ? '1' : '0';
-  return `${setId}|${name}|${localId}|${mega}`;
+  const gx = card.gx ? '1' : '0';
+  const v = card.v ? '1' : '0';
+  const vmax = card.vmax ? '1' : '0';
+  const vstar = card.vstar ? '1' : '0';
+  return `${setId}|${name}|${localId}|${mega}|${gx}|${v}|${vmax}|${vstar}`;
 }
 
 function normalizeCollection(rawCollection) {
@@ -32,6 +56,18 @@ function normalizeCollection(rawCollection) {
       next.holo = true;
       if (typeof next.megaEx !== 'boolean') {
         next.megaEx = isMegaExName(next.name);
+      }
+      if (typeof next.gx !== 'boolean') {
+        next.gx = isGxName(next.name);
+      }
+      if (typeof next.vmax !== 'boolean') {
+        next.vmax = isVmaxName(next.name);
+      }
+      if (typeof next.v !== 'boolean') {
+        next.v = isVName(next.name);
+      }
+      if (typeof next.vstar !== 'boolean') {
+        next.vstar = isVstarName(next.name);
       }
     }
 

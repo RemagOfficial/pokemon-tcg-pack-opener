@@ -202,9 +202,14 @@
 .filter-tab--common.filter-tab--active        { color: #94a3b8; border-color: #94a3b8; }
 .filter-tab--secret-rare.filter-tab--active   { color: #f43f5e; border-color: #f43f5e; }
 .filter-tab--ultra-rare.filter-tab--active    { color: #fb7185; border-color: #fb7185; }
+.filter-tab--rare-gx.filter-tab--active       { color: #22d3ee; border-color: #22d3ee; }
+.filter-tab--rare-v.filter-tab--active        { color: #34d399; border-color: #34d399; }
+.filter-tab--rare-vmax.filter-tab--active     { color: #a78bfa; border-color: #a78bfa; }
+.filter-tab--rare-vstar.filter-tab--active    { color: #facc15; border-color: #facc15; }
 .filter-tab--rare-break.filter-tab--active    { color: #f59e0b; border-color: #f59e0b; }
 .filter-tab--rare-lvx.filter-tab--active      { color: #38bdf8; border-color: #38bdf8; }
 .filter-tab--rare-shiny.filter-tab--active    { color: #facc15; border-color: #facc15; }
+.filter-tab--radiant-rare.filter-tab--active  { color: #f59e0b; border-color: #f59e0b; }
 .filter-tab--graded.filter-tab--active        { color: #e2e8f0; border-color: #e2e8f0; }
 
 .filter-tab--active .filter-tab__count {
@@ -650,6 +655,11 @@
 .coll-subset-card--radiant:hover {
   border-color: #f59e0b;
   box-shadow: 0 6px 22px rgba(245, 158, 11, 0.22);
+}
+
+.coll-subset-card--trainer-gallery:hover {
+  border-color: #ec4899;
+  box-shadow: 0 6px 22px rgba(236, 72, 153, 0.22);
 }
 
 .coll-subset-card__title {

@@ -142,7 +142,7 @@ export default function PackOpener({
     // Update pity counter: hit = holo or any premium rarity in the drawn pack
     if (economyMode && !forcedPack) {
       const hasHit = drawn.some(
-        (c) => c.holo === true || c.rarity === 'Rare BREAK' || c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X' || c.rarity === 'Ultra Rare' || c.rarity === 'Rare Shiny' || c.rarity === 'Secret Rare'
+        (c) => c.holo === true || c.rarity === 'Rare BREAK' || c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X' || c.rarity === 'Ultra Rare' || c.rarity === 'Rare Shiny' || c.rarity === 'Radiant Rare' || c.rarity === 'Secret Rare'
       );
       onPityUpdate?.(hasHit);
     }

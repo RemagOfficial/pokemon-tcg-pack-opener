@@ -10,6 +10,7 @@ const TIER = {
   'Ultra Rare':   4,
   'Rare LV.X':    3,
   'Rare Shiny':   5,
+  'Radiant Rare': 5,
   'Secret Rare':  5,
   'Rare Holo':    4,
   'all-variants': 4,

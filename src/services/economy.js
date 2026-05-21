@@ -23,7 +23,7 @@ export const SET_ORDER = [
   'hgss1', 'hgss2', 'hgss3', 'hgss4',
   'col1',
   'bw1', 'bw2', 'bw3', 'bw4', 'bw5', 'bw6', 'bw7', 'bw8', 'bw9', 'bw10', 'bw11',
-  'xy1', 'xy2', 'xy3', 'xy4', 'xy5', 'xy6', 'xy7', 'xy8', 'xy9', 'xy10', 'xy11', 'xy12',
+  'xy1', 'xy2', 'xy3', 'xy4', 'xy5', 'xy6', 'xy7', 'xy8', 'xy9', 'xy10', 'xy11', 'xy12', 'sm1', 'sm2', 'sm3', 'sm4', 'sm5', 'sm6', 'sm7', 'sm8', 'sm9', 'sm10', 'sm11', 'sm12', 'swsh1', 'swsh2', 'swsh3', 'swsh4', 'swsh5', 'swsh6', 'swsh7', 'swsh8', 'swsh9', 'swsh10', 'swsh11', 'swsh12', 'sv01', 'sv02', 'sv03', 'sv04', 'sv05', 'sv06', 'sv07', 'sv08', 'sv09', 'sv10', 'me01', 'me02', 'me03',
 ];
 
 // Build the price table once at module load
@@ -61,6 +61,7 @@ const RARITY_SELL_FACTOR = {
   'Ultra Rare':  0.80,
   'Rare LV.X':   0.60,
   'Rare Shiny':  1.50,
+  'Radiant Rare': 1.50,
   'Secret Rare': 1.00,
 };
 const HOLO_SELL_MULTIPLIER         = 1.5;   // full holo treatment

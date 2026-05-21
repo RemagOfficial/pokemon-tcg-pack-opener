@@ -3,6 +3,16 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.12.0',
+    date: '2026-05-21',
+    entries: [
+      'Full Sun & Moon series added — Sun & Moon through Cosmic Eclipse (sm1–sm12)',
+      'Full Sword & Shield series added — Sword & Shield through Silver Tempest (swsh1–swsh12)',
+      'Full Scarlet & Violet series added — Scarlet & Violet through Destined Rivals (sv01–sv10)',
+      'Full Mega Evolution series added — Mega Evolution through Perfect Order (me01–me03)',
+    ],
+  },
+  {
     version: '1.11.0',
     date: '2026-05-21',
     entries: [

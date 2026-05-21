@@ -7,7 +7,7 @@ const LOW_RARITY_WEIGHTS = [0.25, 0.5, 0.9, 1.4, 2.2, 3.0, 3.2, 2.4, 1.0, 0.25];
 const MID_RARITY_WEIGHTS = [0.5, 0.9, 1.3, 1.8, 2.2, 2.5, 2.2, 1.6, 0.8, 0.2];
 const HIGH_RARITY_WEIGHTS = [0.9, 1.2, 1.5, 1.9, 2.2, 2.1, 1.7, 1.2, 0.6, 0.15];
 
-const HIGH_RARITIES = new Set(['Rare ex', 'Rare LV.X', 'Rare Shiny', 'Secret Rare']);
+const HIGH_RARITIES = new Set(['Rare ex', 'Rare LV.X', 'Rare Shiny', 'Radiant Rare', 'Secret Rare']);
 
 function pickWeighted(weights) {
   const total = weights.reduce((sum, w) => sum + w, 0);

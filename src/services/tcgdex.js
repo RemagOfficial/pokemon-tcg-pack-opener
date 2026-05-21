@@ -5,7 +5,7 @@ import { getSetConfig, inferRarity } from './sets.js';
 const sdk = new TCGdex('en');
 
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days - WotC sets never change
-const CACHE_VERSION = 'v19'; // bump when card shape changes to invalidate old caches
+const CACHE_VERSION = 'v26'; // bump when card shape changes to invalidate old caches
 
 function isPokemonExName(name) {
   if (!name) return false;
@@ -15,13 +15,43 @@ function isPokemonExName(name) {
 
 function isMegaExName(name) {
   if (!name) return false;
-  // XY-era Mega EX names are prefixed with "M " or "M-" and still include EX.
-  return /^M[\s-].*(?:\s|-)ex(?:\s|$)/i.test(name);
+  // Supports both legacy "M Charizard EX" and newer "Mega Lucario ex" naming.
+  return /^(?:M|Mega)[\s-].*(?:\s|-)ex(?:\s|$)/i.test(name);
+}
+
+function isGxName(name) {
+  if (!name) return false;
+  return /(?:\s|-)gx(?:\s|$)/i.test(name);
+}
+
+function isVmaxName(name) {
+  if (!name) return false;
+  return /(?:\s|-)vmax(?:\s|$)/i.test(name);
+}
+
+function isVstarName(name) {
+  if (!name) return false;
+  return /(?:\s|-)vstar(?:\s|$)/i.test(name);
+}
+
+function isVName(name) {
+  if (!name) return false;
+  return /(?:\s|-)v(?:\s|$)/i.test(name) && !isVmaxName(name) && !isVstarName(name);
+}
+
+function isEnergyCardName(name) {
+  if (!name) return false;
+  return /\benergy$/i.test(String(name).trim());
 }
 
 function isBreakName(name) {
   if (!name) return false;
   return /\bBREAK\b/i.test(name);
+}
+
+function isRadiantName(name) {
+  if (!name) return false;
+  return /^Radiant\s+/i.test(String(name).trim());
 }
 
 function dedupeExVariants(cards) {
@@ -39,7 +69,11 @@ function dedupeExVariants(cards) {
     const name = String(card.name ?? '').trim().toLowerCase();
     const localId = toCanonicalLocalId(card.localId);
     const mega = card.megaEx ? '1' : '0';
-    return `${setId}|${name}|${localId}|${mega}`;
+    const gx = card.gx ? '1' : '0';
+    const v = card.v ? '1' : '0';
+    const vmax = card.vmax ? '1' : '0';
+    const vstar = card.vstar ? '1' : '0';
+    return `${setId}|${name}|${localId}|${mega}|${gx}|${v}|${vmax}|${vstar}`;
   };
 
   const pickPreferred = (a, b) => {
@@ -76,9 +110,19 @@ function dedupeExVariants(cards) {
 function shouldSkipReverseVariant(card) {
   return card.rarity === 'Rare ex'
     || card.rarity === 'Rare BREAK'
+    || card.rarity === 'Radiant Rare'
     || card.megaEx === true
+    || card.gx === true
+    || card.v === true
+    || card.vmax === true
+    || card.vstar === true
     || isPokemonExName(card.name)
+    || isGxName(card.name)
+    || isVName(card.name)
+    || isVmaxName(card.name)
+    || isVstarName(card.name)
     || isBreakName(card.name)
+    || isRadiantName(card.name)
     || card.rarity === 'Rare LV.X'
     || card.rarity === 'Rare Shiny'
     || card.rarity === 'Ultra Rare'
@@ -93,6 +137,7 @@ function normalizeRarity(r) {
   if (!r) return null;
   if (r === 'Rare Holo')        return 'Rare';
   if (r === 'Rare Holo LV.X')  return 'Rare LV.X';
+  if (r === 'Radiant Rare')    return 'Radiant Rare';
   return r;
 }
 
@@ -101,7 +146,7 @@ function normalizeRarity(r) {
  * Returns { holo: bool, normal: bool, apiRarity: string|null, types: string[]|null } or null on failure.
  */
 async function fetchCardVariants(cardId) {
-  const cacheKey = `cv2_${cardId}`;
+  const cacheKey = `cv3_${cardId}`;
   const cached = cacheGet(cacheKey);
   if (cached !== null) return cached === false ? null : cached;
 
@@ -213,6 +258,10 @@ export async function loadSetCards(setId) {
     const group   = nameGroups.get(nameKey) ?? [];
 
     const megaEx = isMegaExName(card.name);
+    const gx = isGxName(card.name);
+    const vmax = isVmaxName(card.name);
+    const vstar = isVstarName(card.name);
+    const v = isVName(card.name);
 
     // --- Rarity (normalised, holo stripped out) ---
     let rarity;
@@ -223,15 +272,23 @@ export async function loadSetCards(setId) {
       const inf = card.rarity;
       rarity = (inf === 'Rare Holo' || inf === 'Holo Variant') ? 'Rare' : (inf ?? 'Common');
     }
-    // Pokemon-ex detection: supports both "Blaziken ex" and "Mewtwo-EX" formats.
-    if (isPokemonExName(card.name)) rarity = 'Rare ex';
+    // Pokemon-ex/GX detection: preserve Secret Rare cards from API classification.
+    if (rarity !== 'Secret Rare' && isPokemonExName(card.name)) rarity = 'Rare ex';
+    if (rarity !== 'Secret Rare' && gx) rarity = 'Rare ex';
+    if (rarity !== 'Secret Rare' && (v || vmax || vstar)) rarity = 'Rare ex';
     if (isBreakName(card.name)) rarity = 'Rare BREAK';
-    // Cards at/above a set-specific secret start are secret rares regardless of API data.
+    const baseRarityBeforeSecretFallback = rarity;
+    // Cards at/above a set-specific secret start are secret rares.
     // Defaults to official total + 1 when no override is provided.
     const numericId = parseInt(card.localId, 10);
     const secretStart = setConfig?.secretStart ?? (setConfig?.totalCards ? setConfig.totalCards + 1 : null);
     if (!isNaN(numericId) && secretStart && numericId >= secretStart) {
       rarity = 'Secret Rare';
+    }
+    // Some sets include basic energy variants indexed above the official count.
+    // Keep the safeguard only for cards that were otherwise common.
+    if (rarity === 'Secret Rare' && isEnergyCardName(card.name) && baseRarityBeforeSecretFallback === 'Common') {
+      rarity = 'Common';
     }
 
     // Explicit non-numeric rarity mappings (e.g. HGSS Alph Lithograph ONE/TWO/THREE/FOUR).
@@ -247,11 +304,13 @@ export async function loadSetCards(setId) {
     // Stormfront Shiny cards (localId 'SH1', 'SH2', etc.) share TCGdex rarity
     // "Rare Holo LV.X" with actual LV.X cards but are a distinct rarity tier.
     if (/^SH\d/i.test(card.localId)) rarity = 'Rare Shiny';
+    // Sword & Shield-era Radiant cards are a dedicated rarity tier.
+    if (isRadiantName(card.name)) rarity = 'Radiant Rare';
 
     // --- Holo flag ---
     // LV.X and Shiny cards are always holofoil; force holo even for the API-less
     // fallback path where vd is null.
-    const isHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Rare LV.X' || rarity === 'Rare Shiny')
+    const isHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Rare LV.X' || rarity === 'Rare Shiny' || rarity === 'Radiant Rare')
       ? true
       : vd !== null
         ? vd.holo === true
@@ -286,7 +345,7 @@ export async function loadSetCards(setId) {
       }
     }
 
-    return { ...card, rarity, holo: isHolo, image, types: vd?.types ?? null, megaEx };
+    return { ...card, rarity, holo: isHolo, image, types: vd?.types ?? null, megaEx, gx, v, vmax, vstar };
   });
 
   // Collapse EX-family variants (e.g. full-art reprints) into a single card entry.
@@ -332,18 +391,28 @@ export async function loadSetCards(setId) {
         const mergeCards = mergeRaw.map((card) => {
           const vd = mergeVariantMap.get(card.id);
           const megaEx = isMegaExName(card.name);
+          const gx = isGxName(card.name);
+          const vmax = isVmaxName(card.name);
+          const vstar = isVstarName(card.name);
+          const v = isVName(card.name);
           let rarity;
           if (vd?.apiRarity) {
             rarity = normalizeRarity(vd.apiRarity) ?? 'Common';
           } else {
             rarity = 'Common';
           }
-          if (isPokemonExName(card.name)) rarity = 'Rare ex';
+          if (rarity !== 'Secret Rare' && isPokemonExName(card.name)) rarity = 'Rare ex';
+          if (rarity !== 'Secret Rare' && gx) rarity = 'Rare ex';
+          if (rarity !== 'Secret Rare' && (v || vmax || vstar)) rarity = 'Rare ex';
           if (isBreakName(card.name)) rarity = 'Rare BREAK';
+          const baseRarityBeforeSecretFallback = rarity;
           const numericId = parseInt(card.localId, 10);
           const secretStart = setConfig?.secretStart ?? (setConfig?.totalCards ? setConfig.totalCards + 1 : null);
           if (!isNaN(numericId) && secretStart && numericId >= secretStart) {
             rarity = 'Secret Rare';
+          }
+          if (rarity === 'Secret Rare' && isEnergyCardName(card.name) && baseRarityBeforeSecretFallback === 'Common') {
+            rarity = 'Common';
           }
           if (setConfig?.rarityPrefixMap) {
             for (const [prefix, mappedRarity] of Object.entries(setConfig.rarityPrefixMap)) {
@@ -353,8 +422,9 @@ export async function loadSetCards(setId) {
               }
             }
           }
-          const isHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK') ? true : (vd !== null ? vd.holo === true : false);
-          return { ...card, rarity, holo: isHolo, types: vd?.types ?? null, megaEx };
+          if (isRadiantName(card.name)) rarity = 'Radiant Rare';
+          const isHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Radiant Rare') ? true : (vd !== null ? vd.holo === true : false);
+          return { ...card, rarity, holo: isHolo, types: vd?.types ?? null, megaEx, gx, v, vmax, vstar };
         });
 
         const dedupedMergeCards = dedupeExVariants(mergeCards);

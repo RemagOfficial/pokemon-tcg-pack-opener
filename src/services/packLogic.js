@@ -21,6 +21,7 @@ export function openPack(allCards) {
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
   const ultraRares   = allCards.filter((c) => c.rarity === 'Ultra Rare' && !c.reverseHolo);
   const breakCards   = allCards.filter((c) => c.rarity === 'Rare BREAK' && !c.reverseHolo);
+  const radiantCards = allCards.filter((c) => c.rarity === 'Radiant Rare' && !c.reverseHolo);
   const exCards      = allCards.filter((c) => c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X');
   const shinyCards   = allCards.filter((c) => c.rarity === 'Rare Shiny');
   const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
@@ -28,7 +29,12 @@ export function openPack(allCards) {
   // Sets with reverse holo cards (EX era+) get a dedicated reverse holo slot,
   // replacing one common slot so the pack stays at 10 cards total.
   const hasRH     = reverseHolos.length > 0;
-  const rhSlot    = hasRH ? pickRandom(reverseHolos, 1) : [];
+  let rhSlot      = hasRH ? pickRandom(reverseHolos, 1) : [];
+
+  // Radiant cards are reverse-slot hits and use shiny-tier odds.
+  if (radiantCards.length > 0 && Math.random() < 1 / 90) {
+    rhSlot = pickRandom(radiantCards, 1);
+  }
 
   const uncommonCards = pickRandom(uncommons, 3);
   const commonCards   = pickRandom(commons, hasRH ? 5 : 6);
@@ -89,12 +95,16 @@ export function openPityPack(allCards) {
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
   const ultraRares   = allCards.filter((c) => c.rarity === 'Ultra Rare' && !c.reverseHolo);
   const breakCards   = allCards.filter((c) => c.rarity === 'Rare BREAK' && !c.reverseHolo);
+  const radiantCards = allCards.filter((c) => c.rarity === 'Radiant Rare' && !c.reverseHolo);
   const exCards      = allCards.filter((c) => c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X');
   const shinyCards   = allCards.filter((c) => c.rarity === 'Rare Shiny');
   const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
 
   const hasRH     = reverseHolos.length > 0;
-  const rhSlot    = hasRH ? pickRandom(reverseHolos, 1) : [];
+  let rhSlot      = hasRH ? pickRandom(reverseHolos, 1) : [];
+  if (radiantCards.length > 0 && Math.random() < 1 / 90) {
+    rhSlot = pickRandom(radiantCards, 1);
+  }
   const uncommonCards = pickRandom(uncommons, 3);
   const commonCards   = pickRandom(commons, hasRH ? 5 : 6);
 
