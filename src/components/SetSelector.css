@@ -24,7 +24,7 @@
 .set-selector {
   --ss-card-size: 160px;
   --ss-grid-gap: 18px;
-  --ss-columns: 6;
+  --ss-columns: 8;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -225,6 +225,18 @@
   display: grid;
   grid-template-columns: repeat(var(--ss-columns), var(--ss-card-size));
   gap: var(--ss-grid-gap);
+}
+
+@media (max-width: 1480px) {
+  .set-selector {
+    --ss-columns: 7;
+  }
+}
+
+@media (max-width: 1300px) {
+  .set-selector {
+    --ss-columns: 6;
+  }
 }
 
 @media (max-width: 1120px) {
