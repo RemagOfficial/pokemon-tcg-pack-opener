@@ -11,6 +11,7 @@ const RARITY_COLOR = {
   'Common':    '#9ca3af',
   'Uncommon':  '#4ade80',
   'Rare':      '#60a5fa',
+  'Ultra Rare': '#fb7185',
   'Rare ex':   '#f97316',
   'Rare LV.X': '#38bdf8',
   'Rare Shiny': '#facc15',

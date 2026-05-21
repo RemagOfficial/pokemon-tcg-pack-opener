@@ -1,11 +1,39 @@
 import { useState, useCallback } from 'react';
 import { rollGrade } from '../services/grading.js';
 
+function isMegaExName(name) {
+  if (!name) return false;
+  return /^M[\s-].*(?:\s|-)ex(?:\s|$)/i.test(name);
+}
+
+function isExFamilyCard(card) {
+  if (!card) return false;
+  return card.rarity === 'Rare ex'
+    || card.megaEx === true
+    || /(?:\s|-)ex(?:\s|$)/i.test(String(card.name ?? ''));
+}
+
+function getExVariantKey(card) {
+  const setId = String(card.setId ?? '');
+  const name = String(card.name ?? '').trim().toLowerCase();
+  const localId = String(card.localId ?? '').replace(/[a-z]+$/i, '');
+  const mega = card.megaEx ? '1' : '0';
+  return `${setId}|${name}|${localId}|${mega}`;
+}
+
 function normalizeCollection(rawCollection) {
   const list = Array.isArray(rawCollection) ? rawCollection : [];
-  return list.map((card) => {
+  const normalized = list.map((card) => {
     const count = Math.max(1, card.count ?? 1);
     const next = { ...card, count };
+
+    // Backfill modern EX semantics for legacy saved cards.
+    if (next.rarity === 'Rare ex') {
+      next.holo = true;
+      if (typeof next.megaEx !== 'boolean') {
+        next.megaEx = isMegaExName(next.name);
+      }
+    }
 
     // Migrate legacy single-grade format to per-grade counts.
     if (!next.graded && typeof next.grade === 'number') {
@@ -26,12 +54,61 @@ function normalizeCollection(rawCollection) {
 
     return next;
   });
+
+  // Reverse EX/MEGA EX variants are not supported in-game. Merge them into base cards.
+  const mergedById = new Map();
+  const canonicalExIdByKey = new Map();
+  for (const card of normalized) {
+    const next = { ...card };
+    if (next.reverseHolo === true && isExFamilyCard(next)) {
+      const idText = String(next.id ?? '');
+      next.id = idText.endsWith('_rh') ? idText.slice(0, -3) : idText;
+      next.reverseHolo = false;
+      next.holo = true;
+      if (typeof next.megaEx !== 'boolean') next.megaEx = isMegaExName(next.name);
+    }
+
+    if (isExFamilyCard(next)) {
+      const key = getExVariantKey(next);
+      const canonicalId = canonicalExIdByKey.get(key);
+      if (canonicalId) {
+        next.id = canonicalId;
+      } else {
+        canonicalExIdByKey.set(key, next.id);
+      }
+    }
+
+    const existing = mergedById.get(next.id);
+    if (!existing) {
+      mergedById.set(next.id, next);
+      continue;
+    }
+
+    existing.count = (existing.count ?? 1) + (next.count ?? 1);
+    if (next.holo) existing.holo = true;
+    if (next.megaEx) existing.megaEx = true;
+
+    const mergedGrades = { ...(existing.graded ?? {}) };
+    for (const [grade, qty] of Object.entries(next.graded ?? {})) {
+      mergedGrades[grade] = (mergedGrades[grade] ?? 0) + (Number(qty) || 0);
+    }
+    if (Object.keys(mergedGrades).length > 0) existing.graded = mergedGrades;
+  }
+
+  return [...mergedById.values()];
 }
 
 function loadCollection(key) {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? normalizeCollection(JSON.parse(raw)) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const normalized = normalizeCollection(parsed);
+    // Persist one-time migrations so UI and filters use updated card flags immediately.
+    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+      localStorage.setItem(key, JSON.stringify(normalized));
+    }
+    return normalized;
   } catch {
     return [];
   }

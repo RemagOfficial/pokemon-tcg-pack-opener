@@ -428,13 +428,22 @@
 }
 
 /* ── Mobile ────────────────────────────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 600px), (hover: none) and (pointer: coarse) {
   .card-modal-content {
     gap: 12px;
   }
 
-  .card-modal-image {
-    height: min(52vh, 320px);
+  .card-modal-image,
+  .card-modal-cardback {
+    width: min(86vw, 420px);
+    height: auto;
+    max-height: 74vh;
+  }
+
+  .card-modal-image-wrap--graded .card-modal-image,
+  .card-modal-image-wrap--graded .card-modal-cardback {
+    width: min(82vw, 380px);
+    max-height: 66vh;
   }
 
   .card-modal-name {

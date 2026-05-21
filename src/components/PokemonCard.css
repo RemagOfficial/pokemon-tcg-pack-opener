@@ -191,6 +191,10 @@
 }
 
 .pcard--graded .pcard__holo-overlay {
-  inset: 14px 4px 4px 4px;
+  top: 52%;
+  left: 50%;
+  width: calc(100% - 22px);
+  height: calc(100% - 36px);
+  transform: translate(-50%, -50%);
   border-radius: 8px;
 }

@@ -22,6 +22,8 @@ export const SET_ORDER = [
   'pl1', 'pl2', 'pl3', 'pl4',
   'hgss1', 'hgss2', 'hgss3', 'hgss4',
   'col1',
+  'bw1', 'bw2', 'bw3', 'bw4', 'bw5', 'bw6', 'bw7', 'bw8', 'bw9', 'bw10', 'bw11',
+  'xy1', 'xy2', 'xy3', 'xy4', 'xy5', 'xy6', 'xy7', 'xy8', 'xy9', 'xy10', 'xy11', 'xy12',
 ];
 
 // Build the price table once at module load
@@ -54,7 +56,9 @@ const RARITY_SELL_FACTOR = {
   'Common':      0.06,
   'Uncommon':    0.12,
   'Rare':        0.28,
+  'Rare BREAK':  0.35,
   'Rare ex':     0.60,
+  'Ultra Rare':  0.80,
   'Rare LV.X':   0.60,
   'Rare Shiny':  1.50,
   'Secret Rare': 1.00,

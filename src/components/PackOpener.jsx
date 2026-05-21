@@ -139,10 +139,10 @@ export default function PackOpener({
     const isPityPack = economyMode && !forcedPack && pityCount >= PITY_THRESHOLD;
     const drawn = forcedPack ?? (isPityPack ? openPityPack(cards) : openPack(cards));
     if (forcedPack) onPackUsed?.();
-    // Update pity counter: hit = holo, EX, or Secret Rare in the drawn pack
+    // Update pity counter: hit = holo or any premium rarity in the drawn pack
     if (economyMode && !forcedPack) {
       const hasHit = drawn.some(
-        (c) => c.holo === true || c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X' || c.rarity === 'Rare Shiny' || c.rarity === 'Secret Rare'
+        (c) => c.holo === true || c.rarity === 'Rare BREAK' || c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X' || c.rarity === 'Ultra Rare' || c.rarity === 'Rare Shiny' || c.rarity === 'Secret Rare'
       );
       onPityUpdate?.(hasHit);
     }

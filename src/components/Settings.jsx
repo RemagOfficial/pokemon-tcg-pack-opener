@@ -3,6 +3,16 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.11.0',
+    date: '2026-05-21',
+    entries: [
+      'Full Black & White and XY series added — BW through Legendary Treasures (bw1–bw11) and XY through Evolutions (xy1–xy12)',
+      'Collection filter polish — filter order is now clearer (tags first, then rarity from rarest to common), and active filter counts now display correctly',
+      'Graded collection fixes — Graded tab count now updates properly, and graded holo overlays in normal card view are aligned to card art',
+      'Mobile fullscreen card fix — card modal sizing on phones now scales correctly so cards no longer appear undersized'
+    ],
+  },
+  {
     version: '1.10.0',
     date: '2026-05-20',
     entries: [

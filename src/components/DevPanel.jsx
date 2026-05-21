@@ -8,7 +8,7 @@ const SAMPLE_TOASTS = [
   { id: '__dev-holo__',      rarity: 'Rare Holo', icon: '✦', title: 'Holo Hunter',    setName: 'Dev Test', packs: 0 },
 ];
 
-const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Rare ex', 'Rare Holo', 'Secret Rare', 'Reverse Holo'];
+const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Rare ex', 'Ultra Rare', 'Rare Holo', 'Secret Rare', 'Reverse Holo'];
 
 export default function DevPanel({
   onClose,
@@ -20,6 +20,7 @@ export default function DevPanel({
   currentSetCards,
   currentSetName,
   onClearAchievements,
+  onClearCaches,
   onAwardFreePacks,
   onReopenTutorial,
   collection,
@@ -113,7 +114,7 @@ export default function DevPanel({
 
   const RARITY_COLORS = {
     'Common': '#94a3b8', 'Uncommon': '#10b981', 'Rare': '#f59e0b',
-    'Rare ex': '#f97316', 'Rare Holo': '#a855f7', 'Secret Rare': '#f43f5e',
+    'Rare ex': '#f97316', 'Ultra Rare': '#fb7185', 'Rare Holo': '#a855f7', 'Secret Rare': '#f43f5e',
   };
 
   return (
@@ -246,6 +247,9 @@ export default function DevPanel({
             <p className="dev-label">Achievements</p>
             <button className="dev-btn dev-btn--danger dev-btn--wide" onClick={onClearAchievements}>
               Reset Claimed Achievements
+            </button>
+            <button className="dev-btn dev-btn--danger dev-btn--wide" onClick={onClearCaches}>
+              Clear Card Caches
             </button>
             <div className="dev-divider" />
             <p className="dev-label">Economy</p>

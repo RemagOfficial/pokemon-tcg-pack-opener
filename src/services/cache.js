@@ -31,3 +31,16 @@ export function cacheSet(key, data, ttl = DEFAULT_TTL) {
 export function cacheClear(key) {
   localStorage.removeItem(CACHE_PREFIX + key);
 }
+
+export function cacheClearAll() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(CACHE_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // Ignore storage access issues in unsupported/private contexts.
+  }
+}

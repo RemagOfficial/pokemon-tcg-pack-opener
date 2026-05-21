@@ -5,6 +5,8 @@ const RARITY_LABEL = {
   'Common':      { label: '●',   color: '#9ca3af' },
   'Uncommon':    { label: '◆',   color: '#4ade80' },
   'Rare':        { label: '★',   color: '#60a5fa' },
+  'Rare BREAK':  { label: 'BREAK', color: '#f59e0b' },
+  'Ultra Rare':  { label: 'UR',  color: '#fb7185' },
   'Rare ex':     { label: 'EX',  color: '#f97316' },
   'Rare LV.X':    { label: 'LV.X',  color: '#38bdf8' },
   'Rare Shiny':   { label: 'SH',    color: '#facc15' },
@@ -12,6 +14,7 @@ const RARITY_LABEL = {
 };
 const HOLO_SUFFIX    = { label: ' ✦', color: '#c084fc' };
 const REVERSE_SUFFIX = { label: ' ✦', color: '#22d3ee' };
+const MEGA_SUFFIX    = { label: 'MEGA', color: '#facc15' };
 
 export default function PokemonCard({ card, size = 'normal', showCount = false, onClick, unowned = false, secretUnowned = false, showGraded = false }) {
   // Secret rare not yet found – render a fully blacked-out mystery card
@@ -33,6 +36,7 @@ export default function PokemonCard({ card, size = 'normal', showCount = false, 
   const hasGrade = typeof card.grade === 'number';
   const isGraded = hasGrade && showGraded;
   const base = RARITY_LABEL[card.rarity] ?? RARITY_LABEL['Common'];
+  const isMegaEx = card.megaEx === true && card.rarity === 'Rare ex';
 
   return (
     <div
@@ -49,9 +53,10 @@ export default function PokemonCard({ card, size = 'normal', showCount = false, 
       />
       {(isHolo || isReverseHolo) && !unowned && <div className="pcard__holo-overlay" />}
       <div className="pcard__rarity">
+        {isMegaEx && <span style={{ color: MEGA_SUFFIX.color }}>{MEGA_SUFFIX.label} </span>}
         <span style={{ color: base.color }}>{base.label}</span>
-        {isHolo && card.rarity !== 'Rare ex' && card.rarity !== 'Rare LV.X' && card.rarity !== 'Rare Shiny' && <span style={{ color: HOLO_SUFFIX.color }}>{HOLO_SUFFIX.label}</span>}
-        {isReverseHolo && card.rarity !== 'Rare ex' && card.rarity !== 'Rare LV.X' && card.rarity !== 'Rare Shiny' && <span style={{ color: REVERSE_SUFFIX.color }}>{REVERSE_SUFFIX.label}</span>}
+        {isHolo && card.rarity !== 'Rare ex' && card.rarity !== 'Rare BREAK' && card.rarity !== 'Rare LV.X' && card.rarity !== 'Rare Shiny' && card.rarity !== 'Ultra Rare' && <span style={{ color: HOLO_SUFFIX.color }}>{HOLO_SUFFIX.label}</span>}
+        {isReverseHolo && card.rarity !== 'Rare ex' && card.rarity !== 'Rare BREAK' && card.rarity !== 'Rare LV.X' && card.rarity !== 'Rare Shiny' && card.rarity !== 'Ultra Rare' && <span style={{ color: REVERSE_SUFFIX.color }}>{REVERSE_SUFFIX.label}</span>}
       </div>
       {showCount && card.count > 1 && (
         <div className="pcard__count">×{card.count}</div>

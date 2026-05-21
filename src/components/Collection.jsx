@@ -16,8 +16,6 @@ function toggleSet(set, value) {
   return next;
 }
 
-const RARITIES = ['All', 'Holo', 'EX', 'Rare', 'Uncommon', 'Common'];
-
 const TYPE_COLORS = {
   Fire: '#ef4444',
   Water: '#3b82f6',
@@ -35,16 +33,18 @@ const TYPE_COLORS = {
 const sortScore = (card) => {
   if (card.rarity === 'Rare Shiny') return -1;
   if (card.rarity === 'Secret Rare') return 0;
-  if (card.rarity === 'Rare ex') return 1;
-  if (card.rarity === 'Rare LV.X') return 1;
-  if (card.holo && card.rarity === 'Rare') return 2;
-  if (card.reverseHolo && card.rarity === 'Rare') return 3;
-  if (!card.holo && !card.reverseHolo && card.rarity === 'Rare') return 4;
-  if (card.reverseHolo) return 5;
-  if (card.holo) return 6;
-  if (card.rarity === 'Uncommon') return 7;
-  if (card.rarity === 'Common') return 8;
-  return 9;
+  if (card.rarity === 'Ultra Rare') return 1;
+  if (card.rarity === 'Rare ex') return 2;
+  if (card.rarity === 'Rare LV.X') return 2;
+  if (card.rarity === 'Rare BREAK') return 3;
+  if (card.holo && card.rarity === 'Rare') return 4;
+  if (card.reverseHolo && card.rarity === 'Rare') return 5;
+  if (!card.holo && !card.reverseHolo && card.rarity === 'Rare') return 6;
+  if (card.reverseHolo) return 7;
+  if (card.holo) return 8;
+  if (card.rarity === 'Uncommon') return 9;
+  if (card.rarity === 'Common') return 10;
+  return 11;
 };
 
 const gradedCount = (card) => {
@@ -59,14 +59,50 @@ const FILTER_CLASS = {
   All: 'filter-tab--all',
   Holo: 'filter-tab--rare-holo',
   EX: 'filter-tab--rare',
+  'MEGA EX': 'filter-tab--rare',
+  BREAK: 'filter-tab--rare-break',
   Rare: 'filter-tab--rare',
   Uncommon: 'filter-tab--uncommon',
   Common: 'filter-tab--common',
   'Secret Rare': 'filter-tab--secret-rare',
+  'Ultra Rare': 'filter-tab--ultra-rare',
   'Rare LV.X': 'filter-tab--rare-lvx',
   'Rare Shiny': 'filter-tab--rare-shiny',
   Graded: 'filter-tab--graded',
 };
+
+const SPLIT_SUBSET_SET_ID = 'bw11';
+const BW11_RC_TOTAL = 25;
+
+function isRadiantCollectionCard(card) {
+  return /^RC/i.test(String(card?.localId ?? ''));
+}
+
+function compareLocalIds(a, b) {
+  const parse = (value) => {
+    const text = String(value ?? '');
+    if (/^RC/i.test(text)) {
+      const n = parseInt(text.replace(/^RC/i, ''), 10);
+      return { group: 1, num: Number.isNaN(n) ? 0 : n, text };
+    }
+    const n = parseInt(text, 10);
+    if (!Number.isNaN(n)) return { group: 0, num: n, text };
+    return { group: 2, num: 0, text };
+  };
+
+  const pa = parse(a);
+  const pb = parse(b);
+  if (pa.group !== pb.group) return pa.group - pb.group;
+  if (pa.num !== pb.num) return pa.num - pb.num;
+  return pa.text.localeCompare(pb.text);
+}
+
+function isOfficialNumberedCard(card, setConfig) {
+  if (!setConfig?.totalCards) return true;
+  const n = parseInt(String(card?.localId ?? ''), 10);
+  if (Number.isNaN(n)) return false;
+  return n <= setConfig.totalCards;
+}
 
 export default function Collection({
   collection,
@@ -84,6 +120,7 @@ export default function Collection({
   const [sortBy, setSortBy] = useState('rarity');
   const [filterType, setFilterType] = useState(null);
   const [viewMode, setViewMode] = useState('collection');
+  const [activeSetSubset, setActiveSetSubset] = useState(null);
   const [modalCard, setModalCard] = useState(null);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(false);
 
@@ -121,10 +158,19 @@ export default function Collection({
 
   const ownedIds = useMemo(() => new Set(collection.map((c) => c.id)), [collection]);
   const isFavouritesView = activeSetId === '__favourites__';
+  const isSplitSubsetSet = !isFavouritesView && activeSetId === SPLIT_SUBSET_SET_ID;
+  const shouldChooseSubset = isSplitSubsetSet && activeSetSubset === null;
 
   const setCards = useMemo(
-    () => (isFavouritesView ? [] : collection.filter((c) => (c.setId ?? 'base1') === activeSetId)),
-    [collection, activeSetId, isFavouritesView],
+    () => {
+      if (isFavouritesView) return [];
+      const base = collection.filter((c) => (c.setId ?? 'base1') === activeSetId);
+      if (!isSplitSubsetSet) return base;
+      if (activeSetSubset === 'main') return base.filter((c) => !isRadiantCollectionCard(c));
+      if (activeSetSubset === 'rc') return base.filter((c) => isRadiantCollectionCard(c));
+      return [];
+    },
+    [collection, activeSetId, isFavouritesView, isSplitSubsetSet, activeSetSubset],
   );
 
   const activeFavCards = useMemo(
@@ -175,6 +221,8 @@ export default function Collection({
     if (filter === 'All') base = activeSetCards;
     else if (filter === 'Holo') base = activeSetCards.filter((c) => c.holo === true || c.reverseHolo === true);
     else if (filter === 'EX') base = activeSetCards.filter((c) => c.rarity === 'Rare ex');
+    else if (filter === 'MEGA EX') base = activeSetCards.filter((c) => c.rarity === 'Rare ex' && c.megaEx === true);
+    else if (filter === 'BREAK') base = activeSetCards.filter((c) => c.rarity === 'Rare BREAK');
     else if (filter === 'Graded') {
       base = activeSetCards.flatMap((c) => {
         if (!c.graded && typeof c.grade === 'number') {
@@ -235,8 +283,14 @@ export default function Collection({
   const checklistCards = useMemo(() => {
     const cards = loadedSets[activeSetId];
     if (!cards) return null;
-    return [...cards].sort((a, b) => parseInt(a.localId, 10) - parseInt(b.localId, 10));
-  }, [loadedSets, activeSetId]);
+    let filtered = cards;
+    if (isSplitSubsetSet) {
+      if (activeSetSubset === 'main') filtered = cards.filter((c) => !isRadiantCollectionCard(c));
+      else if (activeSetSubset === 'rc') filtered = cards.filter((c) => isRadiantCollectionCard(c));
+      else filtered = [];
+    }
+    return [...filtered].sort((a, b) => compareLocalIds(a.localId, b.localId));
+  }, [loadedSets, activeSetId, isSplitSubsetSet, activeSetSubset]);
 
   const ownedOfficialBySet = useMemo(() => {
     const result = {};
@@ -267,11 +321,15 @@ export default function Collection({
         if (!hay.includes(q)) return false;
       }
       if (!hideComplete) return true;
-      const owned = ownedOfficialBySet[set.id] ?? 0;
-      const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length) ?? set.totalCards;
+      const owned = set.id === SPLIT_SUBSET_SET_ID
+        ? collection.filter((c) => (c.setId ?? 'base1') === set.id && c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny' && !isRadiantCollectionCard(c)).length
+        : collection.filter((c) => (c.setId ?? 'base1') === set.id && !c.reverseHolo && isOfficialNumberedCard(c, set)).length;
+      const total = set.id === SPLIT_SUBSET_SET_ID
+        ? ((loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny' && !isRadiantCollectionCard(c)).length) ?? set.totalCards)
+        : ((loadedSets[set.id]?.filter((c) => !c.reverseHolo && isOfficialNumberedCard(c, set)).length) ?? set.totalCards);
       return !(owned > 0 && owned >= total);
     });
-  }, [selSeries, selYears, setSearch, hideComplete, ownedOfficialBySet, loadedSets]);
+  }, [selSeries, selYears, setSearch, hideComplete, ownedOfficialBySet, loadedSets, collection]);
 
   if (!activeSetId) {
     return (
@@ -360,6 +418,7 @@ export default function Collection({
                 style={{ '--accent': '#f43f5e' }}
                 onClick={() => {
                   setActiveSetId('__favourites__');
+                  setActiveSetSubset(null);
                   setFilter('All');
                   setFilterType(null);
                   setViewMode('collection');
@@ -383,8 +442,12 @@ export default function Collection({
             )}
 
             {visibleSets.map((set) => {
-              const owned = ownedOfficialBySet[set.id] ?? 0;
-              const total = (loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length) ?? set.totalCards;
+              const owned = set.id === SPLIT_SUBSET_SET_ID
+                ? collection.filter((c) => (c.setId ?? 'base1') === set.id && c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny' && !isRadiantCollectionCard(c)).length
+                : collection.filter((c) => (c.setId ?? 'base1') === set.id && !c.reverseHolo && isOfficialNumberedCard(c, set)).length;
+              const total = set.id === SPLIT_SUBSET_SET_ID
+                ? ((loadedSets[set.id]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny' && !isRadiantCollectionCard(c)).length) ?? set.totalCards)
+                : ((loadedSets[set.id]?.filter((c) => !c.reverseHolo && isOfficialNumberedCard(c, set)).length) ?? set.totalCards);
               const complete = owned > 0 && owned >= total;
               const pct = total > 0 ? Math.min((owned / total) * 100, 100) : 0;
               return (
@@ -394,6 +457,7 @@ export default function Collection({
                   style={{ '--accent': set.accentColor }}
                   onClick={() => {
                     setActiveSetId(set.id);
+                    setActiveSetSubset(set.id === SPLIT_SUBSET_SET_ID ? null : 'main');
                     setFilter('All');
                     setFilterType(null);
                     setViewMode('collection');
@@ -439,28 +503,121 @@ export default function Collection({
   }
 
   const setConfig = isFavouritesView ? null : SETS.find((s) => s.id === activeSetId);
+  if (shouldChooseSubset) {
+    const mainOwned = collection.filter((c) => (c.setId ?? 'base1') === activeSetId && c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny' && !isRadiantCollectionCard(c)).length;
+    const mainTotal = loadedSets[activeSetId]?.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny' && !isRadiantCollectionCard(c)).length ?? setConfig?.totalCards ?? 0;
+    const rcOwned = collection.filter((c) => (c.setId ?? 'base1') === activeSetId && isRadiantCollectionCard(c)).length;
+    const rcTotal = loadedSets[activeSetId]?.filter((c) => isRadiantCollectionCard(c)).length ?? BW11_RC_TOTAL;
+
+    return (
+      <div className="collection">
+        <div className="collection__header">
+          <div className="collection__header-top">
+            <button className="coll-back-btn" onClick={() => setActiveSetId(null)}>‹ Back</button>
+          </div>
+          <h2 className="collection__subset-title">{setConfig?.name}</h2>
+          <p className="collection__subset-subtitle">Choose which part of this set you want to view.</p>
+        </div>
+
+        <div className="coll-subset-chooser">
+          <button
+            className="coll-subset-card"
+            onClick={() => {
+              setActiveSetSubset('main');
+              setFilter('All');
+              setFilterType(null);
+              setViewMode('collection');
+            }}
+          >
+            <span className="coll-subset-card__title">Main Set</span>
+            <span className="coll-subset-card__desc">Standard Legendary Treasures cards</span>
+            <span className="coll-subset-card__count">{mainOwned} / {mainTotal}</span>
+          </button>
+
+          <button
+            className="coll-subset-card coll-subset-card--radiant"
+            onClick={() => {
+              setActiveSetSubset('rc');
+              setFilter('All');
+              setFilterType(null);
+              setViewMode('collection');
+            }}
+          >
+            <span className="coll-subset-card__title">Radiant Collection</span>
+            <span className="coll-subset-card__desc">Subset cards with RC-numbered local IDs</span>
+            <span className="coll-subset-card__count">{rcOwned} / {rcTotal}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const subsetLabel = isSplitSubsetSet ? (activeSetSubset === 'rc' ? 'Radiant Collection' : 'Main Set') : null;
+  const isOfficialCardForView = (card) => {
+    if (isSplitSubsetSet && activeSetSubset === 'rc') return true;
+    return !card.reverseHolo && isOfficialNumberedCard(card, setConfig);
+  };
   const checklistOfficialCount = checklistCards
-    ? checklistCards.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length
-    : setConfig?.totalCards ?? 0;
-  const officialOwnedCount = activeSetCards.filter((c) => c.rarity !== 'Secret Rare' && c.rarity !== 'Rare Shiny').length;
+    ? checklistCards.filter(isOfficialCardForView).length
+    : (isSplitSubsetSet && activeSetSubset === 'rc' ? BW11_RC_TOTAL : (setConfig?.totalCards ?? 0));
+  const officialOwnedCount = activeSetCards.filter(isOfficialCardForView).length;
   const totalCards = activeSetCards.reduce((sum, c) => sum + (c.count ?? 1), 0);
 
   const hasSecretRare = activeSetCards.some((c) => c.rarity === 'Secret Rare');
+  const hasUltraRare = !isFavouritesView && (isSplitSubsetSet
+    ? activeSetSubset === 'rc'
+    : (
+    (setConfig?.rarityTotals?.['Ultra Rare'] ?? 0) > 0
+    || Boolean(setConfig?.rarityRanges?.['Ultra Rare'])
+    ));
   const hasLvx = activeSetCards.some((c) => c.rarity === 'Rare LV.X');
   const hasShiny = activeSetCards.some((c) => c.rarity === 'Rare Shiny');
+  const hasBreak = !isFavouritesView && (
+    activeSetCards.some((c) => c.rarity === 'Rare BREAK')
+    || (setConfig?.rarityTotals?.['Rare BREAK'] ?? 0) > 0
+  );
+  const hasMegaEx = !isFavouritesView && (
+    activeSetCards.some((c) => c.rarity === 'Rare ex' && c.megaEx === true)
+    || (setConfig?.rarityTotals?.['Mega EX'] ?? 0) > 0
+  );
   const hasGraded = activeSetCards.some((c) => gradedCount(c) > 0);
+  const orderedFilters = [
+    'All',
+    'Holo',
+    ...(hasBreak ? ['BREAK'] : []),
+    'EX',
+    ...(hasMegaEx ? ['MEGA EX'] : []),
+    ...(hasLvx ? ['Rare LV.X'] : []),
+    ...(hasShiny ? ['Rare Shiny'] : []),
+    ...(hasSecretRare ? ['Secret Rare'] : []),
+    ...(hasUltraRare ? ['Ultra Rare'] : []),
+    'Rare',
+    'Uncommon',
+    'Common',
+    ...(hasGraded ? ['Graded'] : []),
+  ];
 
   return (
     <>
       <div className="collection">
         <div className="collection__header">
           <div className="collection__header-top">
-            <button className="coll-back-btn" onClick={() => { setActiveSetId(null); setFilterType(null); }}>‹ Back</button>
+            <button className="coll-back-btn" onClick={() => {
+              if (isSplitSubsetSet && activeSetSubset !== null) setActiveSetSubset(null);
+              else setActiveSetId(null);
+              setFilterType(null);
+            }}>‹ Back</button>
 
             <div className="collection__stats">
               <span><strong>{activeSetCards.length}</strong><em> unique</em></span>
               <span className="collection__divider">•</span>
               <span><strong>{totalCards}</strong><em> total</em></span>
+              {subsetLabel && (
+                <>
+                  <span className="collection__divider">•</span>
+                  <span><strong>{subsetLabel}</strong></span>
+                </>
+              )}
               {!isFavouritesView && (
                 <>
                   <span className="collection__divider">•</span>
@@ -491,7 +648,7 @@ export default function Collection({
             <>
               <div className="collection__filters-row">
                 <div className="collection__filters">
-                  {RARITIES.map((rarityKey) => (
+                  {orderedFilters.map((rarityKey) => (
                     <button
                       key={rarityKey}
                       className={`filter-tab ${FILTER_CLASS[rarityKey]}${filter === rarityKey ? ' filter-tab--active' : ''}`}
@@ -505,50 +662,16 @@ export default function Collection({
                             ? activeSetCards.filter((c) => c.holo === true || c.reverseHolo === true).length
                             : rarityKey === 'EX'
                               ? activeSetCards.filter((c) => c.rarity === 'Rare ex').length
+                            : rarityKey === 'MEGA EX'
+                              ? activeSetCards.filter((c) => c.rarity === 'Rare ex' && c.megaEx === true).length
+                            : rarityKey === 'BREAK'
+                              ? activeSetCards.filter((c) => c.rarity === 'Rare BREAK').length
+                              : rarityKey === 'Graded'
+                                ? activeSetCards.reduce((sum, c) => sum + gradedCount(c), 0)
                               : activeSetCards.filter((c) => c.rarity === rarityKey).length}
                       </span>
                     </button>
                   ))}
-
-                  {hasSecretRare && (
-                    <button
-                      className={`filter-tab ${FILTER_CLASS['Secret Rare']}${filter === 'Secret Rare' ? ' filter-tab--active' : ''}`}
-                      onClick={() => setFilter('Secret Rare')}
-                    >
-                      Secret Rare
-                      <span className="filter-tab__count">{activeSetCards.filter((c) => c.rarity === 'Secret Rare').length}</span>
-                    </button>
-                  )}
-
-                  {hasLvx && (
-                    <button
-                      className={`filter-tab ${FILTER_CLASS['Rare LV.X']}${filter === 'Rare LV.X' ? ' filter-tab--active' : ''}`}
-                      onClick={() => setFilter('Rare LV.X')}
-                    >
-                      LV.X
-                      <span className="filter-tab__count">{activeSetCards.filter((c) => c.rarity === 'Rare LV.X').length}</span>
-                    </button>
-                  )}
-
-                  {hasShiny && (
-                    <button
-                      className={`filter-tab ${FILTER_CLASS['Rare Shiny']}${filter === 'Rare Shiny' ? ' filter-tab--active' : ''}`}
-                      onClick={() => setFilter('Rare Shiny')}
-                    >
-                      Shiny
-                      <span className="filter-tab__count">{activeSetCards.filter((c) => c.rarity === 'Rare Shiny').length}</span>
-                    </button>
-                  )}
-
-                  {hasGraded && (
-                    <button
-                      className={`filter-tab ${FILTER_CLASS.Graded}${filter === 'Graded' ? ' filter-tab--active' : ''}`}
-                      onClick={() => setFilter('Graded')}
-                    >
-                      Graded
-                      <span className="filter-tab__count">{activeSetCards.reduce((sum, c) => sum + gradedCount(c), 0)}</span>
-                    </button>
-                  )}
                 </div>
 
                 <div className="collection__sort-toggle" role="group" aria-label="Sort order">
@@ -631,7 +754,7 @@ export default function Collection({
           activeSetCards.length === 0 ? (
             <div className="collection__empty-inner">
               <div className="collection__empty-icon">{isFavouritesView ? '♥' : '🃏'}</div>
-              <h2>{isFavouritesView ? 'No favourites yet' : `No ${setConfig?.name} cards yet`}</h2>
+              <h2>{isFavouritesView ? 'No favourites yet' : `No ${setConfig?.name}${subsetLabel ? ` (${subsetLabel})` : ''} cards yet`}</h2>
               <p>{isFavouritesView ? 'Open a card and tap ♡ to favourite it.' : 'Open a pack to start collecting!'}</p>
             </div>
           ) : displayed.length === 0 ? (
@@ -680,7 +803,7 @@ export default function Collection({
               <div className="pokeball-spinner__bottom" />
               <div className="pokeball-spinner__center" />
             </div>
-            <p>Loading {setConfig?.name ?? 'set'}...</p>
+            <p>Loading {setConfig?.name ?? 'set'}{subsetLabel ? ` (${subsetLabel})` : ''}...</p>
           </div>
         ) : checklistCards ? (
           <div className="collection__grid">

@@ -201,13 +201,15 @@
 .filter-tab--uncommon.filter-tab--active      { color: #4ade80; border-color: #4ade80; }
 .filter-tab--common.filter-tab--active        { color: #94a3b8; border-color: #94a3b8; }
 .filter-tab--secret-rare.filter-tab--active   { color: #f43f5e; border-color: #f43f5e; }
+.filter-tab--ultra-rare.filter-tab--active    { color: #fb7185; border-color: #fb7185; }
+.filter-tab--rare-break.filter-tab--active    { color: #f59e0b; border-color: #f59e0b; }
 .filter-tab--rare-lvx.filter-tab--active      { color: #38bdf8; border-color: #38bdf8; }
 .filter-tab--rare-shiny.filter-tab--active    { color: #facc15; border-color: #facc15; }
 .filter-tab--graded.filter-tab--active        { color: #e2e8f0; border-color: #e2e8f0; }
 
 .filter-tab--active .filter-tab__count {
-  background: currentColor;
-  color: #0f172a;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
 }
 
 /* ── Type filter chips ───────────────────────────────────────── */
@@ -602,3 +604,73 @@
   flex-shrink: 0;
 }
 .coll-back-btn:hover { color: #e2e8f0; }
+
+.collection__subset-title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #e2e8f0;
+  letter-spacing: 0.01em;
+}
+
+.collection__subset-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  color: #94a3b8;
+}
+
+/* ── BW11 subset chooser ────────────────────────────────────── */
+.coll-subset-chooser {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.coll-subset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(17, 24, 39, 0.95));
+  color: #e2e8f0;
+  padding: 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.coll-subset-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(2, 132, 199, 0.22);
+}
+
+.coll-subset-card--radiant:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.22);
+}
+
+.coll-subset-card__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.coll-subset-card__desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.coll-subset-card__count {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+@media (max-width: 700px) {
+  .coll-subset-chooser {
+    grid-template-columns: 1fr;
+  }
+}

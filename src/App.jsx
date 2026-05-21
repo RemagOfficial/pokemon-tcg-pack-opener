@@ -8,6 +8,7 @@ import Stats from './components/Stats.jsx';
 import { useCollection } from './hooks/useCollection.js';
 import { useEconomy } from './hooks/useEconomy.js';
 import { loadSetCards, loadAllSetSymbols } from './services/tcgdex.js';
+import { cacheClearAll } from './services/cache.js';
 import { SETS } from './services/sets.js';
 import { PACK_PRICES, getSellPrice, STARTING_BALANCE } from './services/economy.js';
 import { ACHIEVEMENT_SETS, computeProgress, getAchievementReward } from './services/achievements.js';
@@ -319,6 +320,17 @@ export default function App() {
     for (let i = 0; i < n; i++) awardFreePack(targetSet);
   }, [selectedSetId, awardFreePack]);
 
+  const devClearCaches = useCallback(() => {
+    cacheClearAll();
+    setLoadedSets({});
+    setSetSymbols({});
+    setSetError(null);
+    if (selectedSetId) {
+      loadSet(selectedSetId);
+    }
+    loadAllSetSymbols().then(setSetSymbols).catch(() => {});
+  }, [selectedSetId, loadSet]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
 
@@ -537,6 +549,7 @@ export default function App() {
         currentSetCards={currentSetCards}
         currentSetName={currentSetConfig?.name}
         onClearAchievements={devClearAchievements}
+        onClearCaches={devClearCaches}
         onAwardFreePacks={devAwardFreePacks}
         onReopenTutorial={handleReopenTutorial}
         collection={collection}

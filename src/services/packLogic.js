@@ -19,6 +19,8 @@ export function openPack(allCards) {
   const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon' && !c.reverseHolo);
   const commons      = allCards.filter((c) => c.rarity === 'Common' && !c.reverseHolo);
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
+  const ultraRares   = allCards.filter((c) => c.rarity === 'Ultra Rare' && !c.reverseHolo);
+  const breakCards   = allCards.filter((c) => c.rarity === 'Rare BREAK' && !c.reverseHolo);
   const exCards      = allCards.filter((c) => c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X');
   const shinyCards   = allCards.filter((c) => c.rarity === 'Rare Shiny');
   const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
@@ -40,6 +42,20 @@ export function openPack(allCards) {
   if (secretRares.length > 0 && Math.random() < 1 / 45) {
     const secretCard = pickRandom(secretRares, 1);
     return [...commonCards, ...uncommonCards, ...rhSlot, ...secretCard];
+  }
+
+  // Ultra Rare: ~1-in-18 chance, replaces the rare slot
+  // (rarer than EX, less rare than Secret Rare)
+  if (ultraRares.length > 0 && Math.random() < 1 / 18) {
+    const ultraCard = pickRandom(ultraRares, 1);
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...ultraCard];
+  }
+
+  // BREAK cards: ~1-in-5 chance, replaces the rare slot.
+  // Less rare than EX, more rare than holo rare.
+  if (breakCards.length > 0 && Math.random() < 1 / 5) {
+    const breakCard = pickRandom(breakCards, 1);
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...breakCard];
   }
 
   // EX Pokemon: ~1-in-9 chance, replaces the rare slot
@@ -71,6 +87,8 @@ export function openPityPack(allCards) {
   const uncommons    = allCards.filter((c) => c.rarity === 'Uncommon' && !c.reverseHolo);
   const commons      = allCards.filter((c) => c.rarity === 'Common' && !c.reverseHolo);
   const secretRares  = allCards.filter((c) => c.rarity === 'Secret Rare' && !c.reverseHolo);
+  const ultraRares   = allCards.filter((c) => c.rarity === 'Ultra Rare' && !c.reverseHolo);
+  const breakCards   = allCards.filter((c) => c.rarity === 'Rare BREAK' && !c.reverseHolo);
   const exCards      = allCards.filter((c) => c.rarity === 'Rare ex' || c.rarity === 'Rare LV.X');
   const shinyCards   = allCards.filter((c) => c.rarity === 'Rare Shiny');
   const reverseHolos = allCards.filter((c) => c.reverseHolo === true);
@@ -88,6 +106,16 @@ export function openPityPack(allCards) {
   // Secret Rare: same 1-in-45 chance
   if (secretRares.length > 0 && Math.random() < 1 / 45) {
     return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(secretRares, 1)];
+  }
+
+  // Ultra Rare: same 1-in-18 chance
+  if (ultraRares.length > 0 && Math.random() < 1 / 18) {
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(ultraRares, 1)];
+  }
+
+  // BREAK cards: same 1-in-5 chance in pity packs.
+  if (breakCards.length > 0 && Math.random() < 1 / 5) {
+    return [...commonCards, ...uncommonCards, ...rhSlot, ...pickRandom(breakCards, 1)];
   }
 
   // EX Pokémon: same 1-in-9 chance
