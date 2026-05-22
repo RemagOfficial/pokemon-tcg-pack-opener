@@ -3,6 +3,13 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.13.1',
+    date: '2026-05-22',
+    entries: [
+      'Mobile experience improved',
+    ],
+  },
+  {
     version: '1.13.0',
     date: '2026-05-22',
     entries: [

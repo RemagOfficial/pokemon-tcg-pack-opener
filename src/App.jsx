@@ -80,6 +80,16 @@ function loadSavedSetId() {
 
 export default function App() {
   const [view, setView] = useState('pack');
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
+  const [economyCounterMode, setEconomyCounterMode] = useState('coins');
+
+  const viewNames = {
+    pack: 'Open Packs',
+    collection: 'Collection',
+    achievements: 'Achievements',
+    showcase: 'Showcase',
+    stats: 'Stats',
+  };
 
   // ── Per-set card cache ─────────────────────────────────────────────────────
   // loadedSets: { [setId]: cards[] }  — stored in state so re-renders fire
@@ -492,46 +502,147 @@ export default function App() {
           </div>
         )}
         <nav className="app-header__nav">
-          <button
-            className={`nav-btn${view === 'pack' ? ' nav-btn--active' : ''}`}
-            onClick={() => setView('pack')}
-          >
-            Open Packs
-          </button>
-          <button
-            className={`nav-btn${view === 'collection' ? ' nav-btn--active' : ''}`}
-            onClick={() => setView('collection')}
-          >
-            Collection
-            {collection.length > 0 && (
-              <span className="nav-btn__badge">{collection.length}</span>
+          {/* Desktop navigation */}
+          <div className="nav-desktop">
+            <button
+              className={`nav-btn${view === 'pack' ? ' nav-btn--active' : ''}`}
+              onClick={() => setView('pack')}
+            >
+              Open Packs
+            </button>
+            <button
+              className={`nav-btn${view === 'collection' ? ' nav-btn--active' : ''}`}
+              onClick={() => setView('collection')}
+            >
+              Collection
+              {collection.length > 0 && (
+                <span className="nav-btn__badge">{collection.length}</span>
+              )}
+            </button>
+            <button
+              className={`nav-btn${view === 'achievements' ? ' nav-btn--active' : ''}`}
+              onClick={() => setView('achievements')}
+            >
+              Achievements
+            </button>
+            <button
+              className={`nav-btn${view === 'showcase' ? ' nav-btn--active' : ''}`}
+              onClick={() => setView('showcase')}
+            >
+              Showcase
+            </button>
+            <button
+              className={`nav-btn${view === 'stats' ? ' nav-btn--active' : ''}`}
+              onClick={() => setView('stats')}
+            >
+              Stats
+            </button>
+            <button
+              className="nav-btn nav-btn--icon"
+              onClick={() => setShowSettings(true)}
+              aria-label="Settings"
+            >
+              ⚙
+            </button>
+          </div>
+
+          {/* Mobile dropdown */}
+          <div className="nav-mobile">
+            {/* Economy and collection counters */}
+            <div className="nav-mobile-counters">
+              {economyMode && (
+                <button
+                  className="nav-mobile-economy-counter"
+                  onClick={() => setEconomyCounterMode(economyCounterMode === 'coins' ? 'freePacks' : 'coins')}
+                >
+                  {economyCounterMode === 'coins' ? (
+                    <>
+                      <span className="nav-mobile-economy-counter__icon">🪙</span>
+                      <span className="nav-mobile-economy-counter__amount">{coins.toLocaleString()}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="nav-mobile-economy-counter__icon">🎁</span>
+                      <span className="nav-mobile-economy-counter__amount">{Object.values(freePacks).reduce((s, v) => s + v, 0)}</span>
+                    </>
+                  )}
+                </button>
+              )}
+              {collection.length > 0 && (
+                <div className="nav-mobile-collection-badge">
+                  <span className="nav-mobile-collection-badge__icon">📚</span>
+                  <span className="nav-mobile-collection-badge__count">{collection.length}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="nav-dropdown-btn"
+              onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
+            >
+              <span>{viewNames[view]}</span>
+              <span className="nav-dropdown-arrow">{mobileDropdownOpen ? '▲' : '▼'}</span>
+            </button>
+            {mobileDropdownOpen && (
+              <div className="nav-dropdown-menu">
+                <button
+                  className={`nav-dropdown-item${view === 'pack' ? ' nav-dropdown-item--active' : ''}`}
+                  onClick={() => {
+                    setView('pack');
+                    setMobileDropdownOpen(false);
+                  }}
+                >
+                  Open Packs
+                </button>
+                <button
+                  className={`nav-dropdown-item${view === 'collection' ? ' nav-dropdown-item--active' : ''}`}
+                  onClick={() => {
+                    setView('collection');
+                    setMobileDropdownOpen(false);
+                  }}
+                >
+                  Collection
+                  {collection.length > 0 && (
+                    <span className="nav-dropdown-item__badge">{collection.length}</span>
+                  )}
+                </button>
+                <button
+                  className={`nav-dropdown-item${view === 'achievements' ? ' nav-dropdown-item--active' : ''}`}
+                  onClick={() => {
+                    setView('achievements');
+                    setMobileDropdownOpen(false);
+                  }}
+                >
+                  Achievements
+                </button>
+                <button
+                  className={`nav-dropdown-item${view === 'showcase' ? ' nav-dropdown-item--active' : ''}`}
+                  onClick={() => {
+                    setView('showcase');
+                    setMobileDropdownOpen(false);
+                  }}
+                >
+                  Showcase
+                </button>
+                <button
+                  className={`nav-dropdown-item${view === 'stats' ? ' nav-dropdown-item--active' : ''}`}
+                  onClick={() => {
+                    setView('stats');
+                    setMobileDropdownOpen(false);
+                  }}
+                >
+                  Stats
+                </button>
+              </div>
             )}
-          </button>
-          <button
-            className={`nav-btn${view === 'achievements' ? ' nav-btn--active' : ''}`}
-            onClick={() => setView('achievements')}
-          >
-            Achievements
-          </button>
-          <button
-            className={`nav-btn${view === 'showcase' ? ' nav-btn--active' : ''}`}
-            onClick={() => setView('showcase')}
-          >
-            Showcase
-          </button>
-          <button
-            className={`nav-btn${view === 'stats' ? ' nav-btn--active' : ''}`}
-            onClick={() => setView('stats')}
-          >
-            Stats
-          </button>
-          <button
-            className="nav-btn nav-btn--icon"
-            onClick={() => setShowSettings(true)}
-            aria-label="Settings"
-          >
-            ⚙
-          </button>
+            <button
+              className="nav-btn nav-btn--icon nav-mobile-settings"
+              onClick={() => setShowSettings(true)}
+              aria-label="Settings"
+            >
+              ⚙
+            </button>
+          </div>
         </nav>
       </header>
 
