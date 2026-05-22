@@ -10,7 +10,7 @@ import { useEconomy } from './hooks/useEconomy.js';
 import { loadSetCards, loadAllSetSymbols } from './services/tcgdex.js';
 import { cacheClearAll } from './services/cache.js';
 import { SETS } from './services/sets.js';
-import { PACK_PRICES, getSellPrice, STARTING_BALANCE } from './services/economy.js';
+import { PACK_PRICES, SET_ORDER, getSellPrice, STARTING_BALANCE } from './services/economy.js';
 import { ACHIEVEMENT_SETS, computeProgress, getAchievementReward } from './services/achievements.js';
 import { resetStats, recordSetCompletion } from './services/stats.js';
 import Settings from './components/Settings.jsx';
@@ -19,6 +19,59 @@ import AchToast from './components/AchToast.jsx';
 import DevPanel from './components/DevPanel.jsx';
 import Tutorial from './components/Tutorial.jsx';
 import './App.css';
+
+const BOOSTERDEX_SET_ID = '__boosterdex__';
+const ECON_OPENED_KEY = 'pkmon_eco_opened_sets';
+const BOOSTERDEX_PACK_PRICE = (() => {
+  const maxBasePack = Math.max(...Object.values(PACK_PRICES));
+  return Math.ceil((maxBasePack * 2) / 10) * 10;
+})();
+
+function loadEcoOpenedSetIds() {
+  try {
+    const raw = localStorage.getItem(ECON_OPENED_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((id) => typeof id === 'string'));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveEcoOpenedSetIds(nextSetIds) {
+  try { localStorage.setItem(ECON_OPENED_KEY, JSON.stringify([...nextSetIds])); } catch { /* ignore */ }
+}
+
+function readCachedSetCardsById() {
+  const bySetId = {};
+  const prefix = 'pkmon_cache_set_';
+  const now = Date.now();
+  try {
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(prefix)) continue;
+      const match = key.match(/^pkmon_cache_set_([^_]+)_cards_/);
+      if (!match) continue;
+      const setId = match[1];
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') continue;
+      const expires = parsed.expires;
+      if (typeof expires === 'number' && now > expires) continue;
+      const data = parsed.data;
+      if (!Array.isArray(data) || data.length === 0) continue;
+      // Keep the largest valid cache entry if multiple versions exist.
+      if (!bySetId[setId] || bySetId[setId].length < data.length) {
+        bySetId[setId] = data;
+      }
+    }
+  } catch {
+    return {};
+  }
+  return bySetId;
+}
 
 // Persist + restore the last-selected set id
 function loadSavedSetId() {
@@ -44,9 +97,46 @@ export default function App() {
     [loadedSets],
   );
 
+  const cachedSetCardsById = useMemo(
+    () => readCachedSetCardsById(),
+    [loadedSets],
+  );
+
+  const boosterDexCards = useMemo(() => {
+    const merged = [];
+    const seen = new Set();
+    const pushUnique = (card) => {
+      if (!card || !card.id || seen.has(card.id)) return;
+      seen.add(card.id);
+      merged.push(card);
+    };
+
+    for (const setCards of Object.values(loadedSets)) {
+      for (const card of setCards) pushUnique(card);
+    }
+
+    for (const [setId, setCards] of Object.entries(cachedSetCardsById)) {
+      if (loadedSets[setId]) continue;
+      for (const card of setCards) pushUnique(card);
+    }
+
+    return merged;
+  }, [loadedSets, cachedSetCardsById]);
+
+  const boosterDexSetCount = useMemo(() => {
+    const ids = new Set([...Object.keys(cachedSetCardsById), ...Object.keys(loadedSets)]);
+    return ids.size;
+  }, [loadedSets, cachedSetCardsById]);
+
+  const isBoosterDexSelected = selectedSetId === BOOSTERDEX_SET_ID;
+
   // Cards for the currently-selected set (null if none / loading)
-  const currentSetCards = selectedSetId ? (loadedSets[selectedSetId] ?? null) : null;
-  const currentSetConfig = SETS.find((s) => s.id === selectedSetId) ?? null;
+  const currentSetCards = isBoosterDexSelected
+    ? boosterDexCards
+    : (selectedSetId ? (loadedSets[selectedSetId] ?? null) : null);
+  const currentSetConfig = isBoosterDexSelected
+    ? { id: BOOSTERDEX_SET_ID, name: 'BoosterDex Mega Pack' }
+    : (SETS.find((s) => s.id === selectedSetId) ?? null);
 
   const loadSet = useCallback(async (setId) => {
     // Already cached — nothing to fetch
@@ -67,7 +157,9 @@ export default function App() {
   useEffect(() => {
     if (!didInitialLoad.current && selectedSetId) {
       didInitialLoad.current = true;
-      loadSet(selectedSetId);
+      if (selectedSetId !== BOOSTERDEX_SET_ID) {
+        loadSet(selectedSetId);
+      }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -79,6 +171,7 @@ export default function App() {
   const handleSelectSet = useCallback(async (setId) => {
     setSelectedSetId(setId);
     try { localStorage.setItem('pokemon_selected_set', setId); } catch { /* ignore */ }
+    if (setId === BOOSTERDEX_SET_ID) return;
     await loadSet(setId);
   }, [loadSet]);
 
@@ -87,6 +180,15 @@ export default function App() {
     try { return localStorage.getItem('pkmon_mode') ?? 'sandbox'; } catch { return 'sandbox'; }
   });
   const economyMode = mode === 'economy';
+  const [ecoOpenedSetIds, setEcoOpenedSetIds] = useState(loadEcoOpenedSetIds);
+  const boosterDexUnlocked = useMemo(
+    () => SET_ORDER.every((id) => ecoOpenedSetIds.has(id)),
+    [ecoOpenedSetIds],
+  );
+  const boosterDexProgress = useMemo(
+    () => SET_ORDER.reduce((sum, id) => sum + (ecoOpenedSetIds.has(id) ? 1 : 0), 0),
+    [ecoOpenedSetIds],
+  );
 
   // Separate collections per mode so economy players can't sell sandbox cards
   const sandboxCol = useCollection('pokemon_collection');
@@ -97,6 +199,12 @@ export default function App() {
     setMode(newMode);
     try { localStorage.setItem('pkmon_mode', newMode); } catch { /* ignore */ }
   }, []);
+
+  useEffect(() => {
+    if (!economyMode || selectedSetId !== BOOSTERDEX_SET_ID || boosterDexUnlocked) return;
+    setSelectedSetId(null);
+    try { localStorage.removeItem('pokemon_selected_set'); } catch { /* ignore */ }
+  }, [economyMode, selectedSetId, boosterDexUnlocked]);
 
   // ── Economy (coins) ──────────────────────────────────────────────────────
   const { coins, spend, earn, reset: resetCoins } = useEconomy();
@@ -260,6 +368,8 @@ export default function App() {
     try { localStorage.removeItem('pkmon_showcase'); } catch { /* ignore */ }
     setPityCounters({});
     try { localStorage.removeItem('pkmon_pity'); } catch { /* ignore */ }
+    setEcoOpenedSetIds(new Set());
+    try { localStorage.removeItem(ECON_OPENED_KEY); } catch { /* ignore */ }
     resetStats();
     prevOwnedPerSet.current = {};
   }, [resetCollection, resetCoins]);
@@ -325,7 +435,7 @@ export default function App() {
     setLoadedSets({});
     setSetSymbols({});
     setSetError(null);
-    if (selectedSetId) {
+    if (selectedSetId && selectedSetId !== BOOSTERDEX_SET_ID) {
       loadSet(selectedSetId);
     }
     loadAllSetSymbols().then(setSetSymbols).catch(() => {});
@@ -334,7 +444,29 @@ export default function App() {
   // ── Render ─────────────────────────────────────────────────────────────────
   const [showSettings, setShowSettings] = useState(false);
 
+  const canOpenCurrentSet = Array.isArray(currentSetCards) && currentSetCards.length > 0;
   const showSetSelector = !selectedSetId || (!currentSetCards && !setLoading && !setError);
+
+  const handleCardsAdded = useCallback((drawnCards) => {
+    addCards(drawnCards);
+    if (!economyMode) return;
+    if (!selectedSetId || selectedSetId === BOOSTERDEX_SET_ID) return;
+    if (!SET_ORDER.includes(selectedSetId)) return;
+    setEcoOpenedSetIds((prev) => {
+      if (prev.has(selectedSetId)) return prev;
+      const next = new Set(prev);
+      next.add(selectedSetId);
+      saveEcoOpenedSetIds(next);
+      return next;
+    });
+  }, [addCards, economyMode, selectedSetId]);
+
+  const getEffectiveSellSetId = useCallback((card) => {
+    if (selectedSetId === BOOSTERDEX_SET_ID) {
+      return card?.setId ?? 'base1';
+    }
+    return card?.setId ?? selectedSetId ?? 'base1';
+  }, [selectedSetId]);
 
   return (
     <>
@@ -427,7 +559,7 @@ export default function App() {
                 <p className="app-error__detail">{setError}</p>
                 <button
                   className="btn-retry"
-                  onClick={() => selectedSetId && loadSet(selectedSetId)}
+                  onClick={() => selectedSetId && selectedSetId !== BOOSTERDEX_SET_ID && loadSet(selectedSetId)}
                 >
                   Retry
                 </button>
@@ -436,17 +568,41 @@ export default function App() {
 
             {/* Set selector grid */}
             {!setLoading && !setError && showSetSelector && (
-              <SetSelector onSelect={handleSelectSet} setSymbols={setSymbols} />
+              <SetSelector
+                onSelect={handleSelectSet}
+                setSymbols={setSymbols}
+                economyMode={economyMode}
+                loadedSetCount={boosterDexSetCount}
+                loadedCardCount={boosterDexCards.length}
+                boosterDexUnlocked={boosterDexUnlocked}
+                boosterDexProgress={boosterDexProgress}
+                boosterDexTotal={SET_ORDER.length}
+              />
+            )}
+
+            {!setLoading && !setError && isBoosterDexSelected && !canOpenCurrentSet && (
+              <div className="app-error">
+                <p>Load at least one set before opening the BoosterDex Mega Pack.</p>
+                <button
+                  className="btn-change-set"
+                  onClick={() => {
+                    setSelectedSetId(null);
+                    try { localStorage.removeItem('pokemon_selected_set'); } catch { /* ignore */ }
+                  }}
+                >
+                  Choose a Set
+                </button>
+              </div>
             )}
 
             {/* Pack opener — shown when a set is selected and its cards are loaded */}
-            {!setLoading && !setError && currentSetCards && (
+            {!setLoading && !setError && canOpenCurrentSet && (
               <PackOpener
                 key={selectedSetId}
                 setId={selectedSetId}
                 cards={currentSetCards}
                 setName={currentSetConfig?.name ?? ''}
-                onCardsAdded={addCards}
+                onCardsAdded={handleCardsAdded}
                 collection={collection}
                 onChangeSet={() => {
                   setSelectedSetId(null);
@@ -454,13 +610,13 @@ export default function App() {
                 }}
                 economyMode={economyMode}
                 coins={coins}
-                packPrice={PACK_PRICES[selectedSetId] ?? PACK_PRICES['base1']}
-                onBuyPack={() => spend(PACK_PRICES[selectedSetId] ?? PACK_PRICES['base1'])}
+                packPrice={selectedSetId === BOOSTERDEX_SET_ID ? BOOSTERDEX_PACK_PRICE : (PACK_PRICES[selectedSetId] ?? PACK_PRICES['base1'])}
+                onBuyPack={() => spend(selectedSetId === BOOSTERDEX_SET_ID ? BOOSTERDEX_PACK_PRICE : (PACK_PRICES[selectedSetId] ?? PACK_PRICES['base1']))}
                 onSellCard={(card) => {
                   const sold = sellCard(card.baseCardId ?? card.id, card.grade ? { grade: card.grade } : undefined);
-                  if (sold) earn(getSellPrice(card, selectedSetId ?? 'base1'));
+                  if (sold) earn(getSellPrice(card, getEffectiveSellSetId(card)));
                 }}
-                getCardSellPrice={(card) => getSellPrice(card, selectedSetId ?? 'base1')}
+                getCardSellPrice={(card) => getSellPrice(card, getEffectiveSellSetId(card))}
                 canCoinFlip={canCoinFlip}
                 onCoinFlip={() => setShowCoinFlip(true)}
                 freePacks={freePacks[selectedSetId] ?? 0}

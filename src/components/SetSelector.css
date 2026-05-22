@@ -298,6 +298,21 @@
   transform: translateY(-1px) scale(1.01);
 }
 
+.set-card--special {
+  border-color: color-mix(in srgb, var(--accent) 65%, rgba(255, 255, 255, 0.12));
+}
+
+.set-card:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.set-card:disabled .set-card__arrow {
+  opacity: 0.45;
+}
+
 /* Subtle diagonal shine */
 .set-card__shine {
   position: absolute;

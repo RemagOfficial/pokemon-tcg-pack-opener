@@ -3,6 +3,14 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.13.0',
+    date: '2026-05-22',
+    entries: [
+      "Added Global Achievements for collecting every card and every holo variant, with generous rewards to celebrate completion",
+      "Added BoosterDex Mega Booster, a special pack containing every card currently loaded, the pack can be unlocked in economy mode by opening every set at least once",
+    ],
+  },
+  {
     version: '1.12.1',
     date: '2026-05-22',
     entries: [

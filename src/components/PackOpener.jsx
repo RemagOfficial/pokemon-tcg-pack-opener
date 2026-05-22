@@ -137,7 +137,7 @@ export default function PackOpener({
     clearTimers();
     preOpenCollectionRef.current = new Set(collectionRef.current.map((c) => c.id));
     const isPityPack = economyMode && !forcedPack && pityCount >= PITY_THRESHOLD;
-    const drawn = forcedPack ?? (isPityPack ? openPityPack(cards) : openPack(cards));
+    const drawn = forcedPack ?? (isPityPack ? openPityPack(cards, setId) : openPack(cards, setId));
     if (forcedPack) onPackUsed?.();
     // Update pity counter: hit = holo or any premium rarity in the drawn pack
     if (economyMode && !forcedPack) {

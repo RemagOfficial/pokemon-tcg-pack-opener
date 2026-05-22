@@ -10,6 +10,35 @@
 
 export const ACHIEVEMENT_SETS = [
   {
+    id: 'global',
+    tcgdexId: '__global__',
+    name: 'Global Mastery',
+    year: 'All Eras',
+    series: 'BoosterDex',
+    achievements: [
+      {
+        id: 'global-complete-any',
+        title: 'BoosterDex Master',
+        description: 'Complete every set with any variant (base or reverse).',
+        icon: '◆',
+        rarity: null,
+        fallbackTotal: 0,
+        globalCompletionType: 'any-variant',
+        filter: (cards) => cards,
+      },
+      {
+        id: 'global-complete-all',
+        title: 'BoosterDex True Master',
+        description: 'Complete every set with all variants.',
+        icon: '◈',
+        rarity: 'all-variants',
+        fallbackTotal: 0,
+        globalCompletionType: 'all-variants',
+        filter: (cards) => cards,
+      },
+    ],
+  },
+  {
     id: 'base',
     tcgdexId: 'base1',
     name: 'Base Set',
@@ -1828,6 +1857,8 @@ export const ACHIEVEMENT_SETS = [
  * Scales with difficulty (rarity tier â†’ harder to collect).
  */
 export function getAchievementReward(ach) {
+  if (ach.id === 'global-complete-any') return 1000;
+  if (ach.id === 'global-complete-all') return 2500;
   if (ach.rarity === 'all-variants') return 25; // every card + every reverse holo
   if (ach.rarity === null)           return 15; // full set (any variant)
   if (ach.rarity === 'Rare Shiny')   return 15; // shiny sub-set (ultra rare)
@@ -1855,6 +1886,7 @@ export function computeProgress(allCards, collection) {
   const result = new Map();
 
   for (const set of ACHIEVEMENT_SETS) {
+    if (set.id === 'global') continue;
     // Pre-filter to only this set's cards
     const setCards = allCards.filter((c) => c.setId === set.tcgdexId);
 
@@ -1869,5 +1901,35 @@ export function computeProgress(allCards, collection) {
       result.set(ach.id, { total, owned, complete: owned >= total && total > 0 });
     }
   }
+
+  const nonGlobalSets = ACHIEVEMENT_SETS.filter((set) => set.id !== 'global');
+  const anyVariantCompletionIds = nonGlobalSets
+    .map((set) => (
+      set.achievements.find((ach) => ach.rarity === null && ach.anyVariant === true)?.id
+      ?? set.achievements.find((ach) => ach.rarity === null)?.id
+    ))
+    .filter(Boolean);
+  const allVariantCompletionIds = nonGlobalSets
+    .map((set) => (
+      set.achievements.find((ach) => ach.rarity === 'all-variants')?.id
+      ?? set.achievements.find((ach) => ach.rarity === null)?.id
+    ))
+    .filter(Boolean);
+
+  const globalSet = ACHIEVEMENT_SETS.find((set) => set.id === 'global');
+  if (globalSet) {
+    for (const ach of globalSet.achievements) {
+      const sourceIds = ach.globalCompletionType === 'all-variants'
+        ? allVariantCompletionIds
+        : anyVariantCompletionIds;
+      const sourceProgress = sourceIds
+        .map((id) => result.get(id))
+        .filter((entry) => entry != null);
+      const total = sourceProgress.reduce((sum, entry) => sum + (entry.total ?? 0), 0);
+      const owned = sourceProgress.reduce((sum, entry) => sum + (entry.owned ?? 0), 0);
+      result.set(ach.id, { total, owned, complete: owned >= total && total > 0 });
+    }
+  }
+
   return result;
 }

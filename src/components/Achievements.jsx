@@ -88,12 +88,13 @@ export default function Achievements({ collection, allCards, economyMode = false
   const setMeta = Object.fromEntries(SETS.map((s) => [s.id, s]));
   const visibleAchSets = ACHIEVEMENT_SETS.filter((set) => {
     const meta = setMeta[set.tcgdexId];
-    if (!meta) return true;
-    if (selSeries.size > 0 && !selSeries.has(meta.series)) return false;
-    if (selYears.size  > 0 && !selYears.has(meta.year))   return false;
+    const series = meta?.series ?? set.series ?? '';
+    const year = meta?.year ?? set.year ?? '';
+    if (selSeries.size > 0 && !selSeries.has(series)) return false;
+    if (selYears.size  > 0 && !selYears.has(year))   return false;
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      const hay = `${set.name} ${meta.series} ${meta.year}`.toLowerCase();
+      const hay = `${set.name} ${series} ${year}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;

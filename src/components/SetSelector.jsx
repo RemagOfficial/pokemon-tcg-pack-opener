@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { SETS } from '../services/sets.js';
 import './SetSelector.css';
 
+const BOOSTERDEX_SET_ID = '__boosterdex__';
+
 // Derive unique sorted series and years from SETS
 const ALL_SERIES = [...new Set(SETS.map((s) => s.series))];
 const ALL_YEARS  = [...new Set(SETS.map((s) => s.year))].sort();
@@ -25,10 +27,22 @@ function saveStoredArray(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
 }
 
-export default function SetSelector({ onSelect, setSymbols = {} }) {
+export default function SetSelector({
+  onSelect,
+  setSymbols = {},
+  economyMode = false,
+  loadedSetCount = 0,
+  loadedCardCount = 0,
+  boosterDexUnlocked = false,
+  boosterDexProgress = 0,
+  boosterDexTotal = 0,
+}) {
   const [showFilter, setShowFilter] = useState(false);
   const [selSeries,  setSelSeries]  = useState(() => new Set(loadStoredArray('pkmon_set_selector_series')));
   const [selYears,   setSelYears]   = useState(() => new Set(loadStoredArray('pkmon_set_selector_years')));
+  const [boosterDexOnly, setBoosterDexOnly] = useState(() => {
+    try { return localStorage.getItem('pkmon_set_selector_boosterdex') === '1'; } catch { return false; }
+  });
   const [search, setSearch] = useState(() => {
     try { return localStorage.getItem('pkmon_set_selector_search') ?? ''; } catch { return ''; }
   });
@@ -51,12 +65,30 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
   useEffect(() => { saveStoredArray('pkmon_set_selector_series', [...selSeries]); }, [selSeries]);
   useEffect(() => { saveStoredArray('pkmon_set_selector_years', [...selYears]); }, [selYears]);
   useEffect(() => {
+    try {
+      if (boosterDexOnly) localStorage.setItem('pkmon_set_selector_boosterdex', '1');
+      else localStorage.removeItem('pkmon_set_selector_boosterdex');
+    } catch { /* ignore */ }
+  }, [boosterDexOnly]);
+  useEffect(() => {
     try { localStorage.setItem('pkmon_set_selector_search', search); } catch { /* ignore */ }
   }, [search]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return SETS.filter((s) => {
+    const megaPack = {
+      id: BOOSTERDEX_SET_ID,
+      name: 'BoosterDex Mega Pack',
+      series: 'BoosterDex',
+      year: economyMode ? 'Economy' : 'Sandbox',
+      totalCards: loadedCardCount,
+      symbol: '◆',
+      accentColor: '#f59e0b',
+      special: true,
+      disabled: loadedSetCount === 0 || (economyMode && boosterDexUnlocked !== true),
+    };
+
+    const regularSets = SETS.filter((s) => {
       if (selSeries.size > 0 && !selSeries.has(s.series)) return false;
       if (selYears.size  > 0 && !selYears.has(s.year))   return false;
       if (q) {
@@ -65,10 +97,23 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
       }
       return true;
     });
-  }, [selSeries, selYears, search]);
 
-  const activeCount = selSeries.size + selYears.size;
-  const clearAll = () => { setSelSeries(new Set()); setSelYears(new Set()); };
+    const megaHay = `${megaPack.name} ${megaPack.series} ${megaPack.year} mixed all loaded sets`;
+    const megaMatchesSearch = !q || megaHay.toLowerCase().includes(q);
+
+    if (boosterDexOnly) {
+      return megaMatchesSearch ? [megaPack] : [];
+    }
+
+    return megaMatchesSearch ? [megaPack, ...regularSets] : regularSets;
+  }, [selSeries, selYears, search, economyMode, boosterDexOnly, loadedSetCount, loadedCardCount, boosterDexUnlocked]);
+
+  const activeCount = selSeries.size + selYears.size + (boosterDexOnly ? 1 : 0);
+  const clearAll = () => {
+    setSelSeries(new Set());
+    setSelYears(new Set());
+    setBoosterDexOnly(false);
+  };
 
   return (
     <div className="set-selector">
@@ -107,6 +152,11 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
                   {y} &times;
                 </button>
               ))}
+              {boosterDexOnly && (
+                <button className="ss-chip" onClick={() => setBoosterDexOnly(false)}>
+                  BoosterDex &times;
+                </button>
+              )}
               <button className="ss-chip ss-chip--clear" onClick={clearAll}>Clear all</button>
             </div>
           )}
@@ -141,6 +191,20 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
                 ))}
               </div>
             </div>
+            <>
+              <div className="ss-popup__divider" />
+              <div className="ss-popup__section">
+                <span className="ss-popup__label">Special</span>
+                <div className="ss-popup__options">
+                  <button
+                    className={`ss-option${boosterDexOnly ? ' ss-option--on' : ''}`}
+                    onClick={() => setBoosterDexOnly((v) => !v)}
+                  >
+                    BoosterDex
+                  </button>
+                </div>
+              </div>
+            </>
             {activeCount > 0 && (
               <>
                 <div className="ss-popup__divider" />
@@ -161,8 +225,9 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
         ) : filtered.map((set) => (
           <button
             key={set.id}
-            className="set-card"
+            className={`set-card${set.special ? ' set-card--special' : ''}`}
             style={{ '--accent': set.accentColor }}
+            disabled={set.disabled === true}
             onClick={() => onSelect(set.id)}
           >
             <div className="set-card__shine" />
@@ -185,7 +250,19 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
               <span className="set-card__year">{set.series} &middot; {set.year}</span>
             </div>
             <div className="set-card__footer">
-              <span className="set-card__count">{set.totalCards} cards</span>
+              <span className="set-card__count">
+                {set.id === BOOSTERDEX_SET_ID
+                  ? economyMode
+                    ? boosterDexUnlocked
+                      ? loadedSetCount > 0
+                        ? `${loadedSetCount} available set${loadedSetCount === 1 ? '' : 's'}`
+                        : 'No cached sets yet'
+                      : `Locked: ${boosterDexProgress}/${boosterDexTotal} packs opened`
+                    : loadedSetCount > 0
+                      ? `${loadedSetCount} available set${loadedSetCount === 1 ? '' : 's'}`
+                      : 'No cached sets yet'
+                  : `${set.totalCards} cards`}
+              </span>
               <span className="set-card__arrow">&#x203a;</span>
             </div>
           </button>
