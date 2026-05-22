@@ -3,6 +3,17 @@ import './Settings.css';
 
 const CHANGELOG = [
   {
+    version: '1.12.1',
+    date: '2026-05-22',
+    entries: [
+      'Rare family labeling polish — GX, V, VMAX, and VSTAR names/colors are now consistent in pack reveals and fullscreen view',
+      'Pack reveal animation polish — premium hit animations now trigger regardless of card position in a pack, while reverse holo cards no longer use premium animations',
+      'Filter persistence improvements — set/search/filter selections now persist reliably across Open Packs, Collection, and Achievements screens',
+      'UI layout polish — active filter chips and Clear all now appear below the search bar for cleaner set filtering',
+      'Modern pack pulls have been rebalanced',
+    ],
+  },
+  {
     version: '1.12.0',
     date: '2026-05-21',
     entries: [

@@ -13,6 +13,10 @@ const RARITY_COLOR = {
   'Rare':      '#60a5fa',
   'Ultra Rare': '#fb7185',
   'Rare ex':   '#f97316',
+  'Rare GX':   '#22d3ee',
+  'Rare V':    '#34d399',
+  'Rare VMAX': '#a78bfa',
+  'Rare VSTAR': '#facc15',
   'Rare LV.X': '#38bdf8',
   'Rare Shiny': '#facc15',
   'Rare Holo': '#e879f9',
@@ -116,7 +120,16 @@ export default function CardModal({ card, onClose, onFavouriteChange, onGradeCar
   const imageUrl = getCardImageUrl(card, 'high');
   const isHolo = card.holo === true;
   const isReverseHolo = card.reverseHolo === true;
-  const rarityColor = RARITY_COLOR[card.rarity] ?? '#9ca3af';
+  const rarityLabel = card.gx === true && card.rarity === 'Rare ex'
+    ? 'Rare GX'
+    : card.vstar === true && card.rarity === 'Rare ex'
+      ? 'Rare VSTAR'
+      : card.vmax === true && card.rarity === 'Rare ex'
+        ? 'Rare VMAX'
+        : card.v === true && card.rarity === 'Rare ex'
+          ? 'Rare V'
+          : card.rarity;
+  const rarityColor = RARITY_COLOR[rarityLabel] ?? RARITY_COLOR[card.rarity] ?? '#9ca3af';
   const setName = card.setName ?? card.set?.name ?? SETS.find((s) => s.id === (card.setId ?? 'base1'))?.name ?? 'Unknown Set';
   const grade = typeof card.grade === 'number' ? card.grade : revealedGrade;
   const isGraded = typeof grade === 'number';
@@ -237,7 +250,7 @@ export default function CardModal({ card, onClose, onFavouriteChange, onGradeCar
         <div className="card-modal-meta">
           <h2 className="card-modal-name">{card.name}</h2>
           <span className="card-modal-rarity" style={{ color: rarityColor }}>
-            {card.rarity}{isHolo && <span style={{ color: '#c084fc' }}> ✦ Holo</span>}{isReverseHolo && <span style={{ color: '#22d3ee' }}> ✦ Reverse Holo</span>}
+            {rarityLabel}{isHolo && <span style={{ color: '#c084fc' }}> ✦ Holo</span>}{isReverseHolo && <span style={{ color: '#22d3ee' }}> ✦ Reverse Holo</span>}
           </span>
           <span className="card-modal-set">{setName} · #{card.localId ?? '?'}</span>
 

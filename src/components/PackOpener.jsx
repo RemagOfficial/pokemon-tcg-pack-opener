@@ -162,10 +162,18 @@ export default function PackOpener({
   }, [clearTimers]);
 
   const currentCard    = packCards[currentIndex];
-  const isLastCard     = currentIndex === packCards.length - 1;
-  const isSecretRare   = isLastCard && currentCard?.rarity === 'Secret Rare';
-  const isHolo         = isLastCard && currentCard?.holo === true && !isSecretRare;
+  const isSecretRare   = currentCard?.reverseHolo !== true && currentCard?.rarity === 'Secret Rare';
+  const isHolo         = currentCard?.reverseHolo !== true && currentCard?.holo === true && !isSecretRare;
   const isNewCard      = currentCard != null && !preOpenCollectionRef.current.has(currentCard.id);
+  const currentRarityLabel = currentCard?.gx === true && currentCard?.rarity === 'Rare ex'
+    ? 'Rare GX'
+    : currentCard?.vstar === true && currentCard?.rarity === 'Rare ex'
+      ? 'Rare VSTAR'
+      : currentCard?.vmax === true && currentCard?.rarity === 'Rare ex'
+        ? 'Rare VMAX'
+        : currentCard?.v === true && currentCard?.rarity === 'Rare ex'
+          ? 'Rare V'
+          : currentCard?.rarity;
 
   const handleCardClick = useCallback(() => {
     if (cardState === 'faceup') {
@@ -329,11 +337,11 @@ export default function PackOpener({
                 {(isHolo || isSecretRare) && <div className="stack-holo" />}
                 {isNewCard && isFlipped && <div className="new-badge">NEW</div>}
                 <div className={`stack-rarity rarity--${currentCard.rarity.replace(/\s+/g, '-').toLowerCase()}`}>
-                  {currentCard.rarity === 'Rare Holo'
+                  {currentRarityLabel === 'Rare Holo'
                     ? '★ HOLO'
-                    : currentCard.rarity === 'Rare'
+                    : currentRarityLabel === 'Rare'
                     ? '★ RARE'
-                    : currentCard.rarity}
+                    : currentRarityLabel}
                 </div>
               </div>
               {/* Card back */}
@@ -349,7 +357,7 @@ export default function PackOpener({
               <>
                 <p className="reveal-name">{currentCard.name}</p>
                 <p className={`reveal-rarity rarity--${currentCard.rarity.replace(/\s+/g, '-').toLowerCase()}`}>
-                  {currentCard.rarity}
+                  {currentRarityLabel}
                 </p>
               </>
             ) : (

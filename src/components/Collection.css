@@ -448,7 +448,16 @@
 }
 
 .coll-screen .ss-filter-bar--fullwidth {
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
+}
+
+.coll-screen .ss-filter-bar__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .coll-screen .ss-search-input {

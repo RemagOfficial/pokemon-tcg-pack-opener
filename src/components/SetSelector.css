@@ -9,14 +9,21 @@
   width: 100%;
   max-width: none;
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
 .set-selector .ss-filter-bar--fullwidth {
   gap: 8px;
+}
+
+.ss-filter-bar__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 /* ═══════════════════════════════════════════════════════════════
    Set Selector

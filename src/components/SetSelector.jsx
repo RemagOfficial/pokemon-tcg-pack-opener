@@ -12,11 +12,26 @@ function toggle(set, value) {
   return next;
 }
 
+function loadStoredArray(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredArray(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
 export default function SetSelector({ onSelect, setSymbols = {} }) {
   const [showFilter, setShowFilter] = useState(false);
-  const [selSeries,  setSelSeries]  = useState(new Set());
-  const [selYears,   setSelYears]   = useState(new Set());
-  const [search, setSearch] = useState('');
+  const [selSeries,  setSelSeries]  = useState(() => new Set(loadStoredArray('pkmon_set_selector_series')));
+  const [selYears,   setSelYears]   = useState(() => new Set(loadStoredArray('pkmon_set_selector_years')));
+  const [search, setSearch] = useState(() => {
+    try { return localStorage.getItem('pkmon_set_selector_search') ?? ''; } catch { return ''; }
+  });
   const popupRef = useRef(null);
 
   // Close popup on outside click
@@ -32,6 +47,12 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
       document.removeEventListener('touchstart', handler);
     };
   }, [showFilter]);
+
+  useEffect(() => { saveStoredArray('pkmon_set_selector_series', [...selSeries]); }, [selSeries]);
+  useEffect(() => { saveStoredArray('pkmon_set_selector_years', [...selYears]); }, [selYears]);
+  useEffect(() => {
+    try { localStorage.setItem('pkmon_set_selector_search', search); } catch { /* ignore */ }
+  }, [search]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -57,36 +78,38 @@ export default function SetSelector({ onSelect, setSymbols = {} }) {
       {/* Filter/search bar */}
       <div className="set-selector__bar-row">
         <div className="ss-filter-bar ss-filter-bar--fullwidth">
-        <button
-          className={`ss-filter-btn${activeCount > 0 ? ' ss-filter-btn--active' : ''}`}
-          onClick={() => setShowFilter((v) => !v)}
-          aria-expanded={showFilter}
-        >
-          <span>Filter</span>
-          {activeCount > 0 && <span className="ss-filter-badge">{activeCount}</span>}
-        </button>
-        <input
-          className="ss-search-input"
-          type="text"
-          placeholder="Search sets by name, series, or year..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        {activeCount > 0 && (
-          <div className="ss-chips">
-            {[...selSeries].map((s) => (
-              <button key={s} className="ss-chip" onClick={() => setSelSeries(toggle(selSeries, s))}>
-                {s} &times;
-              </button>
-            ))}
-            {[...selYears].map((y) => (
-              <button key={y} className="ss-chip" onClick={() => setSelYears(toggle(selYears, y))}>
-                {y} &times;
-              </button>
-            ))}
-            <button className="ss-chip ss-chip--clear" onClick={clearAll}>Clear all</button>
+          <div className="ss-filter-bar__top">
+            <button
+              className={`ss-filter-btn${activeCount > 0 ? ' ss-filter-btn--active' : ''}`}
+              onClick={() => setShowFilter((v) => !v)}
+              aria-expanded={showFilter}
+            >
+              <span>Filter</span>
+              {activeCount > 0 && <span className="ss-filter-badge">{activeCount}</span>}
+            </button>
+            <input
+              className="ss-search-input"
+              type="text"
+              placeholder="Search sets by name, series, or year..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
-        )}
+          {activeCount > 0 && (
+            <div className="ss-chips">
+              {[...selSeries].map((s) => (
+                <button key={s} className="ss-chip" onClick={() => setSelSeries(toggle(selSeries, s))}>
+                  {s} &times;
+                </button>
+              ))}
+              {[...selYears].map((y) => (
+                <button key={y} className="ss-chip" onClick={() => setSelYears(toggle(selYears, y))}>
+                  {y} &times;
+                </button>
+              ))}
+              <button className="ss-chip ss-chip--clear" onClick={clearAll}>Clear all</button>
+            </div>
+          )}
         {showFilter && (
           <div className="ss-popup" ref={popupRef}>
             <div className="ss-popup__section">

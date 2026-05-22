@@ -5,7 +5,7 @@ import { getSetConfig, inferRarity } from './sets.js';
 const sdk = new TCGdex('en');
 
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days - WotC sets never change
-const CACHE_VERSION = 'v26'; // bump when card shape changes to invalidate old caches
+const CACHE_VERSION = 'v27'; // bump when card shape changes to invalidate old caches
 
 function isPokemonExName(name) {
   if (!name) return false;
@@ -129,6 +129,20 @@ function shouldSkipReverseVariant(card) {
     || card.rarity === 'Secret Rare';
 }
 
+function shouldSkipHoloVariant(card) {
+  // Only split dual normal+holo variants for standard Rare cards.
+  return card.rarity !== 'Rare' || shouldSkipReverseVariant(card);
+}
+
+function isPremiumHitRarity(rarity) {
+  return rarity === 'Rare BREAK'
+    || rarity === 'Rare ex'
+    || rarity === 'Rare LV.X'
+    || rarity === 'Rare Shiny'
+    || rarity === 'Ultra Rare'
+    || rarity === 'Secret Rare';
+}
+
 /**
  * Normalise a TCGdex rarity string to one of the app rarity buckets.
  * Holo status is tracked separately via the `holo` boolean field.
@@ -137,6 +151,7 @@ function normalizeRarity(r) {
   if (!r) return null;
   if (r === 'Rare Holo')        return 'Rare';
   if (r === 'Rare Holo LV.X')  return 'Rare LV.X';
+  if (r === 'Mega Hyper Rare') return 'Secret Rare';
   if (r === 'Radiant Rare')    return 'Radiant Rare';
   return r;
 }
@@ -310,11 +325,17 @@ export async function loadSetCards(setId) {
     // --- Holo flag ---
     // LV.X and Shiny cards are always holofoil; force holo even for the API-less
     // fallback path where vd is null.
-    const isHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Rare LV.X' || rarity === 'Rare Shiny' || rarity === 'Radiant Rare')
+    const baseIsHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Rare LV.X' || rarity === 'Rare Shiny' || rarity === 'Radiant Rare' || rarity === 'Secret Rare')
       ? true
       : vd !== null
         ? vd.holo === true
         : /^H/i.test(card.localId) || card.rarity === 'Rare Holo' || card.rarity === 'Holo Variant';
+
+    const splitDualHoloVariant = vd?.normal === true
+      && vd?.holo === true
+      && !shouldSkipHoloVariant({ ...card, rarity, megaEx, gx, v, vmax, vstar });
+
+    const isHolo = splitDualHoloVariant ? false : baseIsHolo;
 
     // --- Image ---
     // Holo cards that have a separate normal-print partner share that card's image
@@ -345,13 +366,30 @@ export async function loadSetCards(setId) {
       }
     }
 
-    return { ...card, rarity, holo: isHolo, image, types: vd?.types ?? null, megaEx, gx, v, vmax, vstar };
+    return {
+      ...card,
+      rarity,
+      holo: isHolo,
+      image,
+      types: vd?.types ?? null,
+      megaEx,
+      gx,
+      v,
+      vmax,
+      vstar,
+      splitDualHoloVariant,
+    };
   });
 
   // Collapse EX-family variants (e.g. full-art reprints) into a single card entry.
   const dedupedCards = dedupeExVariants(cards);
 
-  // Step 6: generate reverse holo entries for cards that have a reverse variant.
+  // Step 6: generate holo entries for cards that are printed in both normal+holo forms.
+  const holoVariantCards = dedupedCards
+    .filter((card) => card.splitDualHoloVariant === true)
+    .map((card) => ({ ...card, id: card.id + '_h', holo: true, splitDualHoloVariant: false }));
+
+  // Step 7: generate reverse holo entries for cards that have a reverse variant.
   // Each gets id '<originalId>_rh', reverseHolo: true, holo: false.
   // EX-family and premium tiers never appear in the reverse holo slot.
   const reverseHoloCards = dedupedCards
@@ -359,9 +397,14 @@ export async function loadSetCards(setId) {
       const vd = variantMap.get(card.id);
       return vd?.reverse === true && !shouldSkipReverseVariant(card);
     })
-    .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false }));
+    .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false, splitDualHoloVariant: false }));
 
-  let allCards = reverseHoloCards.length > 0 ? [...dedupedCards, ...reverseHoloCards] : [...dedupedCards];
+  const baseCards = dedupedCards.map((card) => {
+    const { splitDualHoloVariant: _drop, ...rest } = card;
+    return rest;
+  });
+  const allVariants = [...baseCards, ...holoVariantCards, ...reverseHoloCards];
+  let allCards = allVariants;
 
   // Merge additional TCGdex sets into this one (e.g. exu Unown into ex10)
   if (setConfig.mergeSets?.length) {
@@ -423,11 +466,19 @@ export async function loadSetCards(setId) {
             }
           }
           if (isRadiantName(card.name)) rarity = 'Radiant Rare';
-          const isHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Radiant Rare') ? true : (vd !== null ? vd.holo === true : false);
-          return { ...card, rarity, holo: isHolo, types: vd?.types ?? null, megaEx, gx, v, vmax, vstar };
+          const baseIsHolo = (rarity === 'Rare ex' || rarity === 'Rare BREAK' || rarity === 'Radiant Rare' || rarity === 'Secret Rare') ? true : (vd !== null ? vd.holo === true : false);
+          const splitDualHoloVariant = vd?.normal === true
+            && vd?.holo === true
+            && !shouldSkipHoloVariant({ ...card, rarity, megaEx, gx, v, vmax, vstar });
+          const isHolo = splitDualHoloVariant ? false : baseIsHolo;
+          return { ...card, rarity, holo: isHolo, types: vd?.types ?? null, megaEx, gx, v, vmax, vstar, splitDualHoloVariant };
         });
 
         const dedupedMergeCards = dedupeExVariants(mergeCards);
+
+        const mergeHoloVariants = dedupedMergeCards
+          .filter((card) => card.splitDualHoloVariant === true)
+          .map((card) => ({ ...card, id: card.id + '_h', holo: true, splitDualHoloVariant: false }));
 
         // Reverse holos for merge cards
         const mergeRH = dedupedMergeCards
@@ -435,9 +486,14 @@ export async function loadSetCards(setId) {
             const vd = mergeVariantMap.get(card.id);
             return vd?.reverse === true && !shouldSkipReverseVariant(card);
           })
-          .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false }));
+          .map((card) => ({ ...card, id: card.id + '_rh', reverseHolo: true, holo: false, splitDualHoloVariant: false }));
 
-        allCards.push(...dedupedMergeCards, ...mergeRH);
+        const mergeBaseCards = dedupedMergeCards.map((card) => {
+          const { splitDualHoloVariant: _drop, ...rest } = card;
+          return rest;
+        });
+
+        allCards.push(...mergeBaseCards, ...mergeHoloVariants, ...mergeRH);
       } catch (e) {
         console.warn(`Failed to merge set ${mergeSetId} into ${setId}:`, e);
       }

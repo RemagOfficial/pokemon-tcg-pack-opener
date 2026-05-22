@@ -159,6 +159,32 @@ function isOfficialNumberedCard(card, setConfig) {
   return n <= setConfig.totalCards;
 }
 
+function loadStoredArray(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredArray(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
+function loadStoredValue(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw !== null ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStoredValue(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
 export default function Collection({
   collection,
   loadedSets = {},
@@ -169,20 +195,20 @@ export default function Collection({
   onGradeCard,
   getCardSellPrice,
 }) {
-  const [activeSetId, setActiveSetId] = useState(null);
-  const [hideComplete, setHideComplete] = useState(false);
-  const [filter, setFilter] = useState('All');
-  const [sortBy, setSortBy] = useState('rarity');
-  const [filterType, setFilterType] = useState(null);
-  const [viewMode, setViewMode] = useState('collection');
-  const [activeSetSubset, setActiveSetSubset] = useState(null);
+  const [activeSetId, setActiveSetId] = useState(() => loadStoredValue('pkmon_collection_active_set', null));
+  const [hideComplete, setHideComplete] = useState(() => loadStoredValue('pkmon_collection_hide_complete', false));
+  const [filter, setFilter] = useState(() => loadStoredValue('pkmon_collection_filter', 'All'));
+  const [sortBy, setSortBy] = useState(() => loadStoredValue('pkmon_collection_sort_by', 'rarity'));
+  const [filterType, setFilterType] = useState(() => loadStoredValue('pkmon_collection_filter_type', null));
+  const [viewMode, setViewMode] = useState(() => loadStoredValue('pkmon_collection_view_mode', 'collection'));
+  const [activeSetSubset, setActiveSetSubset] = useState(() => loadStoredValue('pkmon_collection_active_subset', null));
   const [modalCard, setModalCard] = useState(null);
   const [isLoadingChecklist, setIsLoadingChecklist] = useState(false);
 
   const [showFilter, setShowFilter] = useState(false);
-  const [selSeries, setSelSeries] = useState(new Set());
-  const [selYears, setSelYears] = useState(new Set());
-  const [setSearch, setSetSearch] = useState('');
+  const [selSeries, setSelSeries] = useState(() => new Set(loadStoredArray('pkmon_collection_series')));
+  const [selYears, setSelYears] = useState(() => new Set(loadStoredArray('pkmon_collection_years')));
+  const [setSearch, setSetSearch] = useState(() => loadStoredValue('pkmon_collection_search', ''));
 
   const [favouriteIds, setFavouriteIds] = useState(() => getFavourites());
 
@@ -195,6 +221,17 @@ export default function Collection({
     setSelYears(new Set());
     setHideComplete(false);
   };
+
+  useEffect(() => { saveStoredValue('pkmon_collection_active_set', activeSetId); }, [activeSetId]);
+  useEffect(() => { saveStoredValue('pkmon_collection_hide_complete', hideComplete); }, [hideComplete]);
+  useEffect(() => { saveStoredValue('pkmon_collection_filter', filter); }, [filter]);
+  useEffect(() => { saveStoredValue('pkmon_collection_sort_by', sortBy); }, [sortBy]);
+  useEffect(() => { saveStoredValue('pkmon_collection_filter_type', filterType); }, [filterType]);
+  useEffect(() => { saveStoredValue('pkmon_collection_view_mode', viewMode); }, [viewMode]);
+  useEffect(() => { saveStoredValue('pkmon_collection_active_subset', activeSetSubset); }, [activeSetSubset]);
+  useEffect(() => { saveStoredArray('pkmon_collection_series', [...selSeries]); }, [selSeries]);
+  useEffect(() => { saveStoredArray('pkmon_collection_years', [...selYears]); }, [selYears]);
+  useEffect(() => { saveStoredValue('pkmon_collection_search', setSearch); }, [setSearch]);
 
   useEffect(() => {
     if (!showFilter) return;
@@ -400,35 +437,37 @@ export default function Collection({
             <h2 className="coll-screen__title">Collection</h2>
             <div className="coll-bar-row">
               <div className="ss-filter-bar ss-filter-bar--fullwidth">
-                <button
-                  className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
-                  onClick={() => setShowFilter((v) => !v)}
-                  aria-expanded={showFilter}
-                >
-                  <span>Filter</span>
-                  {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
-                </button>
-                <input
-                  className="ss-search-input"
-                  type="text"
-                  placeholder="Search sets by name, series, or year..."
-                  value={setSearch}
-                  onChange={(e) => setSetSearch(e.target.value)}
-                />
-                {activeFilterCount > 0 && (
-                  <div className="ss-chips">
-                    {[...selSeries].map((s) => (
-                      <button key={s} className="ss-chip" onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s} &times;</button>
-                    ))}
-                    {[...selYears].map((y) => (
-                      <button key={y} className="ss-chip" onClick={() => setSelYears(toggleSet(selYears, y))}>{y} &times;</button>
-                    ))}
-                    {hideComplete && (
-                      <button className="ss-chip" onClick={() => setHideComplete(false)}>Hide completed &times;</button>
+                    <div className="ss-filter-bar__top">
+                      <button
+                        className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
+                        onClick={() => setShowFilter((v) => !v)}
+                        aria-expanded={showFilter}
+                      >
+                        <span>Filter</span>
+                        {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
+                      </button>
+                      <input
+                        className="ss-search-input"
+                        type="text"
+                        placeholder="Search sets by name, series, or year..."
+                        value={setSearch}
+                        onChange={(e) => setSetSearch(e.target.value)}
+                      />
+                    </div>
+                    {activeFilterCount > 0 && (
+                      <div className="ss-chips">
+                        {[...selSeries].map((s) => (
+                          <button key={s} className="ss-chip" onClick={() => setSelSeries(toggleSet(selSeries, s))}>{s} &times;</button>
+                        ))}
+                        {[...selYears].map((y) => (
+                          <button key={y} className="ss-chip" onClick={() => setSelYears(toggleSet(selYears, y))}>{y} &times;</button>
+                        ))}
+                        {hideComplete && (
+                          <button className="ss-chip" onClick={() => setHideComplete(false)}>Hide completed &times;</button>
+                        )}
+                        <button className="ss-chip ss-chip--clear" onClick={clearAllFilters}>Clear all</button>
+                      </div>
                     )}
-                    <button className="ss-chip ss-chip--clear" onClick={clearAllFilters}>Clear all</button>
-                  </div>
-                )}
                 {showFilter && (
                   <div className="ss-popup" ref={filterPopupRef}>
                     <div className="ss-popup__section">

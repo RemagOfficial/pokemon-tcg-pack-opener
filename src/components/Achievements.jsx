@@ -12,6 +12,32 @@ function toggleSet(set, value) {
   return next;
 }
 
+function loadStoredArray(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredArray(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
+function loadStoredValue(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw !== null ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStoredValue(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+}
+
 const RARITY_CLASS = {
   'Common':   'rarity--common',
   'Uncommon': 'rarity--uncommon',
@@ -26,12 +52,17 @@ const RARITY_CLASS = {
 };
 
 export default function Achievements({ collection, allCards, economyMode = false }) {
-  const [activeSet, setActiveSet] = useState(null);
+  const [activeSet, setActiveSet] = useState(() => loadStoredValue('pkmon_ach_active_set', null));
   const [showFilter, setShowFilter] = useState(false);
-  const [selSeries, setSelSeries] = useState(new Set());
-  const [selYears,  setSelYears]  = useState(new Set());
-  const [search, setSearch] = useState("");
+  const [selSeries, setSelSeries] = useState(() => new Set(loadStoredArray('pkmon_ach_series')));
+  const [selYears,  setSelYears]  = useState(() => new Set(loadStoredArray('pkmon_ach_years')));
+  const [search, setSearch] = useState(() => loadStoredValue('pkmon_ach_search', ''));
   const filterPopupRef = useRef(null);
+
+  useEffect(() => { saveStoredValue('pkmon_ach_active_set', activeSet); }, [activeSet]);
+  useEffect(() => { saveStoredArray('pkmon_ach_series', [...selSeries]); }, [selSeries]);
+  useEffect(() => { saveStoredArray('pkmon_ach_years', [...selYears]); }, [selYears]);
+  useEffect(() => { saveStoredValue('pkmon_ach_search', search); }, [search]);
 
   useEffect(() => {
     if (!showFilter) return;
@@ -74,23 +105,25 @@ export default function Achievements({ collection, allCards, economyMode = false
         <h2 className="ach-screen__title">Achievements</h2>
         <div className="ach-bar-row">
           <div className="ss-filter-bar ss-filter-bar--fullwidth">
-            <button
-              className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
-              onClick={() => setShowFilter((v) => !v)}
-              aria-expanded={showFilter}
-              style={{ marginRight: 8 }}
-            >
-              <span>Filter</span>
-              {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
-            </button>
-            <input
-              className="ss-search-input"
-              type="text"
-              placeholder="Search sets by name, series, or year..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ flex: 1 }}
-            />
+            <div className="ss-filter-bar__top">
+              <button
+                className={`ss-filter-btn${activeFilterCount > 0 ? ' ss-filter-btn--active' : ''}`}
+                onClick={() => setShowFilter((v) => !v)}
+                aria-expanded={showFilter}
+                style={{ marginRight: 8 }}
+              >
+                <span>Filter</span>
+                {activeFilterCount > 0 && <span className="ss-filter-badge">{activeFilterCount}</span>}
+              </button>
+              <input
+                className="ss-search-input"
+                type="text"
+                placeholder="Search sets by name, series, or year..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ flex: 1 }}
+              />
+            </div>
             {activeFilterCount > 0 && (
               <div className="ss-chips">
                 {[...selSeries].map((s) => (
